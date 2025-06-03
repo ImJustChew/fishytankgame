@@ -1,7 +1,9 @@
 import { _decorator, Component, Node } from 'cc';
 import { FishTank } from './FishTank';
+import { FishManager } from './FishManager';
 import databaseService, { SavedFishType } from './firebase/database-service';
 import authService from './firebase/auth-service';
+import { FISH_LIST } from './FishData';
 
 const { ccclass, property } = _decorator;
 
@@ -10,6 +12,9 @@ export class FishTankManager extends Component {
 
     @property(FishTank)
     fishTank: FishTank | null = null;
+
+    @property(FishManager)
+    fishManager: FishManager | null = null;
 
     @property
     autoLoadFish: boolean = true;
@@ -22,12 +27,17 @@ export class FishTankManager extends Component {
             this.loadFishFromDatabase();
         }
         this.spawnDefaultFish();
-    }/**
+    }    /**
      * Set up real-time listener for fish data changes
      */
     private setupFishDataListener() {
         if (!this.fishTank) {
             console.error('FishTank component not assigned to FishTankManager');
+            return;
+        }
+
+        if (!this.fishManager) {
+            console.error('FishManager component not assigned to FishTankManager');
             return;
         }
 
@@ -47,9 +57,14 @@ export class FishTankManager extends Component {
             return;
         }
 
+        if (!this.fishManager) {
+            console.error('FishManager component not assigned to FishTankManager');
+            return;
+        }
+
         if (fishData && fishData.length > 0) {
             console.log(`Received ${fishData.length} fish from real-time update`);
-            this.fishTank.spawnFishFromData(fishData);
+            this.fishTank.spawnFishFromData(fishData, this.fishManager);
         } else {
             console.log('No fish data received from real-time update');
             // Optionally spawn default fish for testing
@@ -63,12 +78,17 @@ export class FishTankManager extends Component {
             return;
         }
 
+        if (!this.fishManager) {
+            console.error('FishManager component not assigned to FishTankManager');
+            return;
+        }
+
         try {
             const savedFish = await databaseService.getSavedFish();
 
             if (savedFish && savedFish.length > 0) {
                 console.log(`Loading ${savedFish.length} fish from database`);
-                this.fishTank.spawnFishFromData(savedFish);
+                this.fishTank.spawnFishFromData(savedFish, this.fishManager);
             } else {
                 console.log('No saved fish found in database');
                 // Optionally spawn some default fish for testing
@@ -82,13 +102,13 @@ export class FishTankManager extends Component {
     }
 
     private spawnDefaultFish() {
-        if (!this.fishTank) return;
+        if (!this.fishTank || !this.fishManager) return;
 
         const user = authService.getCurrentUser();
         const ownerId = user ? user.uid : 'unknown-user';
 
-        // Create some default fish for testing
-        const defaultFishTypes = ['goldfish', 'clownfish', 'angelfish', 'guppy', 'tetra'];
+        // Create some default fish for testing using IDs from FishData
+        const defaultFishTypes = FISH_LIST.map(fish => fish.id).slice(0, 6); // Use first 3 types for simplicity
         const defaultFish: SavedFishType[] = defaultFishTypes.map((type, index) => ({
             ownerId: ownerId,
             type: type,
@@ -96,7 +116,7 @@ export class FishTankManager extends Component {
             lastFedTime: Date.now() - (Math.random() * 86400000) // Random time in last 24 hours
         }));
 
-        this.fishTank.spawnFishFromData(defaultFish);
+        this.fishTank.spawnFishFromData(defaultFish, this.fishManager);
         console.log('Spawned default fish for testing');
     }
 
