@@ -79,10 +79,11 @@ export class AuthButtonHandler extends Component {
                 this.showSignInUI();
             }
         });
-    }
-
-    private async handleUserSignedIn(user: firebase.User) {
+    } private async handleUserSignedIn(user: firebase.User) {
         try {
+            // Update lastOnline timestamp
+            await databaseService.updateUserData({ lastOnline: Date.now() });
+
             // Check if user data exists
             const userData = await databaseService.getUserData();
 
