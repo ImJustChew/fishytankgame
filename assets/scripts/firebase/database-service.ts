@@ -1,6 +1,7 @@
 import { database } from './firebase';
 import authService from './auth-service';
 import firebase from './firebase-compat.js';
+import { INITIAL_MONEY } from '../constants';
 
 export type UserData = {
     email: string;
@@ -211,6 +212,40 @@ class DatabaseService {
         } catch (error) {
             console.error('Error getting fish by UID:', error);
             return null;
+        }
+    }
+
+    async isUsernameAvailable(username: string): Promise<boolean> {
+        try {
+            const snapshot = await database.ref('users').orderByChild('username').equalTo(username).once('value');
+            return !snapshot.exists(); // Returns true if username is available (doesn't exist)
+        } catch (error) {
+            console.error('Error checking username availability:', error);
+            return false; // Assume unavailable on error for safety
+        }
+    }
+
+    async createUserProfile(email: string, username: string): Promise<void> {
+        const user = authService.getCurrentUser();
+        if (!user) {
+            console.warn('Cannot create user profile: No user is signed in');
+            return;
+        }
+
+        const userData: UserData = {
+            email: email,
+            username: username,
+            money: INITIAL_MONEY,
+            lastCollectionTime: Date.now(),
+            friends: {}
+        };
+
+        try {
+            await this.setUserData(userData);
+            console.log(`User profile created for ${user.uid} with username: ${username}`);
+        } catch (error) {
+            console.error('Error creating user profile:', error);
+            throw error;
         }
     }
 }
