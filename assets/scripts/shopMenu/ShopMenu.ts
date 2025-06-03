@@ -1,6 +1,7 @@
 import { _decorator, Component, Node, Label, Button, Prefab, instantiate, ScrollView, UITransform } from 'cc';
 import databaseService, { SavedFishType } from '../firebase/database-service';
 import authService from '../firebase/auth-service';
+import { ShopItemUI } from './ShopItemUI';
 
 const { ccclass, property } = _decorator;
 
@@ -69,21 +70,19 @@ export class ShopMenu extends Component {
             const itemNode = instantiate(this.shopItemPrefab);
             this.itemContainer.addChild(itemNode);
             
-            // Set item data
-            const nameLabel = itemNode.getChildByName('NameLabel')?.getComponent(Label);
-            const priceLabel = itemNode.getChildByName('PriceLabel')?.getComponent(Label);
-            const descLabel = itemNode.getChildByName('DescriptionLabel')?.getComponent(Label);
-            const buyButton = itemNode.getChildByName('BuyButton')?.getComponent(Button);
-            
-            if (nameLabel) nameLabel.string = item.name;
-            if (priceLabel) priceLabel.string = `${item.price}`;
-            if (descLabel) descLabel.string = item.description;
-            
-            // Set up buy button
-            if (buyButton) {
-                buyButton.node.on(Node.EventType.TOUCH_END, () => {
-                    this.buyItem(item);
-                });
+            // Get the ShopItemUI component
+            const shopItemUI = itemNode.getComponent(ShopItemUI);
+            if (shopItemUI) {
+                // Set item data
+                shopItemUI.setItemData(item.name, item.price, item.description);
+                
+                // Set up buy button
+                const buyButton = shopItemUI.buyButton || itemNode.getChildByName('BuyButton')?.getComponent(Button);
+                if (buyButton) {
+                    buyButton.node.on(Node.EventType.TOUCH_END, () => {
+                        this.buyItem(item);
+                    });
+                }
             }
         });
     }
@@ -101,15 +100,15 @@ export class ShopMenu extends Component {
             return;
         }
         
-        // Create new fish data
-        const newFish: SavedFishType = {
-            ownerId: user.uid,
-            type: item.type,
-            health: 100,
-            lastFedTime: Date.now()
-        };
-        
         try {
+            // Create new fish data
+            const newFish: SavedFishType = {
+                ownerId: user.uid,
+                type: item.type,
+                health: 100,
+                lastFedTime: Date.now()
+            };
+            
             // Add fish to database
             await databaseService.addFish(newFish);
             
@@ -135,3 +134,4 @@ export class ShopMenu extends Component {
         this.node.active = false;
     }
 }
+
