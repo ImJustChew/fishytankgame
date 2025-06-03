@@ -213,6 +213,21 @@ class DatabaseService {
             return null;
         }
     }
+
+    async updateUserMoney(newAmount: number): Promise<void> {
+        const user = authService.getCurrentUser();
+        if (!user) {
+            console.warn('Cannot update money: No user is signed in');
+            return;
+        }
+
+        try {
+            await database.ref(`users/${user.uid}/money`).set(newAmount);
+            console.log(`Updated money for user ${user.uid} to ${newAmount}`);
+        } catch (error) {
+            console.error('Error updating user money:', error);
+        }
+    }
 }
 
 const databaseService = new DatabaseService();

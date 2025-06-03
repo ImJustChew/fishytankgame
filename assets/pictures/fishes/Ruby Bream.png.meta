@@ -2,7 +2,7 @@
   "ver": "1.0.27",
   "importer": "image",
   "imported": true,
-  "uuid": "fdd9949d-68b3-4cd5-bdee-edb265b947ae",
+  "uuid": "f7f78e76-04e1-41bc-b382-9e09d4a2ac2d",
   "files": [
     ".json",
     ".png"
@@ -10,14 +10,14 @@
   "subMetas": {
     "6c48a": {
       "importer": "texture",
-      "uuid": "fdd9949d-68b3-4cd5-bdee-edb265b947ae@6c48a",
-      "displayName": "Aji",
+      "uuid": "f7f78e76-04e1-41bc-b382-9e09d4a2ac2d@6c48a",
+      "displayName": "Ruby Bream",
       "id": "6c48a",
       "name": "texture",
       "userData": {
         "wrapModeS": "clamp-to-edge",
         "wrapModeT": "clamp-to-edge",
-        "imageUuidOrDatabaseUri": "fdd9949d-68b3-4cd5-bdee-edb265b947ae",
+        "imageUuidOrDatabaseUri": "f7f78e76-04e1-41bc-b382-9e09d4a2ac2d",
         "isUuid": true,
         "visible": false,
         "minfilter": "nearest",
@@ -34,8 +34,8 @@
     },
     "f9941": {
       "importer": "sprite-frame",
-      "uuid": "fdd9949d-68b3-4cd5-bdee-edb265b947ae@f9941",
-      "displayName": "Aji",
+      "uuid": "f7f78e76-04e1-41bc-b382-9e09d4a2ac2d@f9941",
+      "displayName": "Ruby Bream",
       "id": "f9941",
       "name": "spriteFrame",
       "userData": {
@@ -113,7 +113,7 @@
           ]
         },
         "isUuid": true,
-        "imageUuidOrDatabaseUri": "fdd9949d-68b3-4cd5-bdee-edb265b947ae@6c48a",
+        "imageUuidOrDatabaseUri": "f7f78e76-04e1-41bc-b382-9e09d4a2ac2d@6c48a",
         "atlasUuid": "",
         "trimType": "auto"
       },
@@ -129,6 +129,6 @@
     "type": "sprite-frame",
     "hasAlpha": true,
     "fixAlphaTransparencyArtifacts": false,
-    "redirect": "fdd9949d-68b3-4cd5-bdee-edb265b947ae@6c48a"
+    "redirect": "f7f78e76-04e1-41bc-b382-9e09d4a2ac2d@6c48a"
   }
 }

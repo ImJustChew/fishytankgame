@@ -2,6 +2,7 @@ import { _decorator, Component, Node } from 'cc';
 import { FishTank } from './FishTank';
 import databaseService, { SavedFishType } from './firebase/database-service';
 import authService from './firebase/auth-service';
+import { ShopMenu } from './shopMenu/ShopMenu';
 
 const { ccclass, property } = _decorator;
 
@@ -13,6 +14,9 @@ export class FishTankManager extends Component {
 
     @property
     autoLoadFish: boolean = true;
+
+    @property(Node)
+    shopMenuNode: Node | null = null;
 
     private unsubscribeFishData: (() => void) | null = null; start() {
         if (this.autoLoadFish) {
@@ -138,5 +142,23 @@ export class FishTankManager extends Component {
 
     onDestroy() {
         this.cleanup();
+    }
+
+    public openShopMenu() {
+        if (this.shopMenuNode) {
+            const shopMenu = this.shopMenuNode.getComponent(ShopMenu);
+            if (shopMenu) {
+                shopMenu.show();
+            }
+        }
+    }
+
+    public closeShopMenu() {
+        if (this.shopMenuNode) {
+            const shopMenu = this.shopMenuNode.getComponent(ShopMenu);
+            if (shopMenu) {
+                shopMenu.hide();
+            }
+        }
     }
 }
