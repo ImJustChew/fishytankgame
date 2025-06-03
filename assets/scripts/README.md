@@ -25,6 +25,20 @@ This system provides a complete fish tank simulation for your Cocos Creator 3.8.
 - Handles saving fish data to database
 - Provides high-level fish management functions
 
+### 4. FriendsFishTankManager Component (`FriendsFishTankManager.ts`)
+
+- Displays friends' fish tanks using their UID
+- Integrates with social service to fetch friends' fish data
+- Supports fish interaction features (viewing, stealing)
+- Provides friend tank management and refresh functionality
+
+### 5. FishTankUI Component (`FishTankUI.ts`)
+
+- Bridges the FishTank with the Firebase database
+- Uses real-time listeners for automatic fish data updates
+- Handles saving fish data to database
+- Provides high-level fish management functions
+
 ### 4. FishTankUI Component (`FishTankUI.ts`)
 
 - Provides UI controls for fish tank management
@@ -48,17 +62,26 @@ This system provides a complete fish tank simulation for your Cocos Creator 3.8.
 2. Add a UITransform component to define the tank size
 3. Add the `FishTank` component to the same node
 4. The FishTank will use its own node's size as the tank boundary
-5. Assign the fish prefab to the `fishPrefab` property
+5. Assign the FishManager component to the `fishManager` property
 6. Set `maxFishCount` as desired
 
 ### 3. Add Fish Tank Manager
 
 1. Create a manager node with the `FishTankManager` component
 2. Assign the FishTank component to the `fishTank` property
-3. Enable `autoLoadFish` to automatically use real-time listeners for database updates
-4. The system now uses Firebase real-time listeners instead of polling
+3. Assign the FishManager component to the `fishManager` property
+4. Enable `autoLoadFish` to automatically use real-time listeners for database updates
+5. The system now uses Firebase real-time listeners instead of polling
 
-### 4. Optional UI Setup
+### 4. Setup Friends Fish Tank Manager (Optional)
+
+1. Create a friends tank manager node with the `FriendsFishTankManager` component
+2. Assign a separate FishTank component to the `fishTank` property
+3. Assign the FishManager component to the `fishManager` property
+4. Use `loadFriendsFishTank(friendUid)` to display a friend's fish tank
+5. This component is separate from the main tank for viewing friends' tanks
+
+### 5. Optional UI Setup
 
 1. Create UI buttons and labels
 2. Add the `FishTankUI` component to a UI node
@@ -112,6 +135,34 @@ this.fishTankManager.disableAutoLoadFish();
 
 ```typescript
 await this.fishTankManager.saveFishToDatabase();
+```
+
+### Friends Fish Tank Management
+
+```typescript
+// Load a friend's fish tank
+await this.friendsTankManager.loadFriendsFishTank(friendUid, friendData);
+
+// Get current fish count in friend's tank
+const count = this.friendsTankManager.getFishCount();
+
+// Get all fish data for interactions
+const fishData = this.friendsTankManager.getCurrentFishData();
+
+// Steal a specific fish from friend
+const result = await this.friendsTankManager.stealFish(fishId);
+if (result.success) {
+  console.log(`Successfully stole fish! Detected: ${result.detected}`);
+}
+
+// Check if we can interact with friend's fish
+const canInteract = await this.friendsTankManager.canInteractWithFish();
+
+// Refresh the friend's tank
+await this.friendsTankManager.refreshFriendsFishTank();
+
+// Clear the tank display
+this.friendsTankManager.clearFishTank();
 ```
 
 ## Real-time Database Listeners

@@ -534,6 +534,67 @@ class SocialService {
     }
 
     /**
+     * Subscribe to a friend's fish collection changes in real-time
+     * @param friendUid The UID of the friend whose fish to monitor
+     * @param callback Function to call when fish data changes
+     * @returns Unsubscribe function to stop listening
+     */
+    onFriendsFishChanged(friendUid: string, callback: (fish: SavedFishType[] | null) => void): (() => void) | null {
+        const currentUser = authService.getCurrentUser();
+        if (!currentUser) {
+            console.warn('Cannot subscribe to friend\'s fish: No user is signed in');
+            return null;
+        }
+
+        // First verify friendship
+        this.checkIfFriends(friendUid).then(isFriend => {
+            if (!isFriend) {
+                console.warn('Cannot subscribe to fish: Not friends with this user');
+                callback(null);
+                return;
+            }
+        });
+
+        const fishRef = database.ref(`users/${friendUid}/fishes`);
+
+        const unsubscribe = fishRef.on('value', (snapshot) => {
+            // Re-verify friendship on each update for security
+            this.checkIfFriends(friendUid).then(isFriend => {
+                if (!isFriend) {
+                    console.warn('Friendship ended, stopping fish updates');
+                    callback(null);
+                    return;
+                }
+
+                const data = snapshot.val();
+                if (!data) {
+                    callback([]);
+                    return;
+                }
+
+                const fishArray = Object.keys(data).map(key => ({
+                    ...data[key],
+                    id: key
+                }));
+
+                console.log(`Real-time update: Friend ${friendUid} has ${fishArray.length} fish`);
+                callback(fishArray);
+            }).catch(error => {
+                console.error('Error verifying friendship in real-time listener:', error);
+                callback(null);
+            });
+        }, (error) => {
+            console.error('Error in friend fish listener:', error);
+            callback(null);
+        });
+
+        return () => {
+            fishRef.off('value', unsubscribe);
+            console.log(`Unsubscribed from friend ${friendUid} fish updates`);
+        };
+    }
+
+    /**
      * Subscribe to steal attempts targeting the current user
      */
     onStealAttemptsChanged(callback: (attempts: StealAttempt[] | null) => void): (() => void) | null {
