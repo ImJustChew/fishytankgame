@@ -8,6 +8,7 @@ export type UserData = {
     username: string;
     money: number;
     lastCollectionTime: number;
+    lastOnline: number;
     friends: {
         [uid: string]: true;
     }
@@ -237,6 +238,7 @@ class DatabaseService {
             username: username,
             money: INITIAL_MONEY,
             lastCollectionTime: Date.now(),
+            lastOnline: Date.now(),
             friends: {}
         };
 
