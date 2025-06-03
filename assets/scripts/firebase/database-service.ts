@@ -162,6 +162,57 @@ class DatabaseService {
             fishRef.off('value', unsubscribe);
         };
     }
+
+    /**
+     * Get user data by UID (useful for social features)
+     */
+    async getUserDataByUid(uid: string): Promise<UserData | null> {
+        try {
+            const snapshot = await database.ref(`users/${uid}`).once('value');
+            const data = snapshot.val();
+            console.log(`Retrieved user data for user ${uid}:`, data);
+            return data || null;
+        } catch (error) {
+            console.error('Error getting user data by UID:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Update specific fields of user data
+     */
+    async updateUserData(updates: Partial<UserData>): Promise<void> {
+        const user = authService.getCurrentUser();
+        if (!user) {
+            console.warn('Cannot update user data: No user is signed in');
+            return;
+        }
+
+        try {
+            await database.ref(`users/${user.uid}`).update(updates);
+            console.log(`User data updated for user ${user.uid}:`, updates);
+        } catch (error) {
+            console.error('Error updating user data:', error);
+        }
+    }
+
+    /**
+     * Get fish data for a specific user (useful for social features)
+     */
+    async getFishByUid(uid: string): Promise<SavedFishType[] | null> {
+        try {
+            const snapshot = await database.ref(`users/${uid}/fishes`).once('value');
+            const data = snapshot.val();
+            console.log(`Retrieved fish for user ${uid}:`, data);
+            return data ? Object.keys(data).map(key => ({
+                ...data[key],
+                id: key
+            })) : null;
+        } catch (error) {
+            console.error('Error getting fish by UID:', error);
+            return null;
+        }
+    }
 }
 
 const databaseService = new DatabaseService();
