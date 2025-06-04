@@ -101,7 +101,7 @@ export class FriendsFishTankManager extends Component {
     }
 
     /**
-     * Handle real-time fish data updates
+     * Handle real-time fish data updates - preserves fish positions
      */
     private handleFishDataUpdate(fishData: SavedFishType[] | null) {
         if (!this.fishTank || !this.fishManager) {
@@ -109,14 +109,14 @@ export class FriendsFishTankManager extends Component {
             return;
         }
 
-        // Clear existing fish first
-        this.fishTank.clearAllFish();
-
         if (fishData && fishData.length > 0) {
             console.log(`Received ${fishData.length} fish from friend's real-time update`);
-            this.fishTank.spawnFishFromData(fishData, this.fishManager);
+            // Use updateFishFromData instead of clearing and respawning to preserve positions
+            this.fishTank.updateFishFromData(fishData, this.fishManager);
         } else {
             console.log('No fish data received from friend\'s real-time update - tank is now empty');
+            // Clear all fish when no data is received
+            this.fishTank.clearAllFish();
         }
     }
 

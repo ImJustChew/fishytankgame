@@ -23,7 +23,7 @@ export class FishTank extends Component {
     private tankBounds: { min: Vec3, max: Vec3 } = { min: new Vec3(), max: new Vec3() };
 
     private currentActiveFishFood: FishFoodType | null = null;
-    
+
     start() {
         this.calculateTankBounds();
         // always set default fish food value
@@ -70,6 +70,70 @@ export class FishTank extends Component {
         fishToSpawn.forEach((fishData, index) => {
             this.spawnFish(fishData, fishManager);
         });
+    }
+
+    /**
+     * Update fish data without losing positions - intelligent synchronization
+     * Only adds new fish, removes missing fish, and updates existing fish data
+     */
+    public updateFishFromData(fishDataArray: SavedFishType[], fishManager: FishManager) {
+        // Recalculate tank bounds to ensure they're up to date
+        this.calculateTankBounds();
+
+        // Get current fish IDs for comparison
+        const currentFishIds = new Set(
+            this.activeFish
+                .map(fish => fish.getFishData()?.id)
+                .filter(id => id !== undefined) as string[]
+        );
+
+        // Get new fish IDs for comparison
+        const newFishIds = new Set(
+            fishDataArray
+                .map(fish => fish.id)
+                .filter(id => id !== undefined) as string[]
+        );
+
+        // Remove fish that are no longer in the new data
+        const fishToRemove = this.activeFish.filter(fish => {
+            const fishData = fish.getFishData();
+            return fishData?.id && !newFishIds.has(fishData.id);
+        });
+
+        fishToRemove.forEach(fish => {
+            console.log(`Removing fish ${fish.getFishData()?.id} - no longer in database`);
+            this.removeFish(fish);
+        });
+
+        // Process each fish from the new data
+        fishDataArray.slice(0, this.maxFishCount).forEach(newFishData => {
+            if (!newFishData.id) {
+                console.warn('Fish data missing ID, cannot sync');
+                return;
+            }
+
+            // Find existing fish with this ID
+            const existingFish = this.activeFish.find(fish => {
+                const fishData = fish.getFishData();
+                return fishData?.id === newFishData.id;
+            });
+
+            if (existingFish) {
+                // Update existing fish data without losing position
+                console.log(`Updating existing fish ${newFishData.id} data`);
+                existingFish.updateFishData(newFishData);
+            } else {
+                // Add new fish if we haven't reached the limit
+                if (this.activeFish.length < this.maxFishCount) {
+                    console.log(`Adding new fish ${newFishData.id}`);
+                    this.spawnFish(newFishData, fishManager);
+                } else {
+                    console.warn('Cannot add more fish - max fish count reached');
+                }
+            }
+        });
+
+        console.log(`Fish sync complete: ${this.activeFish.length} fish active`);
     }
 
     public spawnFish(fishData: SavedFishType, fishManager: FishManager): Fish | null {

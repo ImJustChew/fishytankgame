@@ -109,7 +109,7 @@ export class FishTankManager extends Component {
     }
 
     /**
-     * Handle real-time fish data updates
+     * Handle real-time fish data updates - preserves fish positions
      */
     private handleFishDataUpdate(fishData: SavedFishType[] | null) {
         if (!this.fishTank) {
@@ -124,15 +124,18 @@ export class FishTankManager extends Component {
 
         if (fishData && fishData.length > 0) {
             console.log(`Received ${fishData.length} fish from real-time update`);
-            this.fishTank.spawnFishFromData(fishData, this.fishManager);
+            // Use updateFishFromData instead of spawnFishFromData to preserve positions
+            this.fishTank.updateFishFromData(fishData, this.fishManager);
         } else {
             console.log('No fish data received from real-time update');
+            // Clear all fish when no data is received
+            this.fishTank.clearAllFish();
             // Optionally spawn default fish for testing
             this.spawnDefaultFish();
         }
     }
 
-    public async loadFishFromDatabase() {
+    public async loadFishFromDatabase(preserveExisting: boolean = false) {
         if (!this.fishTank) {
             console.error('FishTank component not assigned to FishTankManager');
             return;
@@ -148,7 +151,13 @@ export class FishTankManager extends Component {
 
             if (savedFish && savedFish.length > 0) {
                 console.log(`Loading ${savedFish.length} fish from database`);
-                this.fishTank.spawnFishFromData(savedFish, this.fishManager);
+                if (preserveExisting) {
+                    // Use updateFishFromData to preserve existing fish positions
+                    this.fishTank.updateFishFromData(savedFish, this.fishManager);
+                } else {
+                    // Use spawnFishFromData for complete replacement (default behavior)
+                    this.fishTank.spawnFishFromData(savedFish, this.fishManager);
+                }
             } else {
                 console.log('No saved fish found in database');
                 // Optionally spawn some default fish for testing
