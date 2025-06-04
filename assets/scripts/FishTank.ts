@@ -436,6 +436,31 @@ export class FishTank extends Component {
     }
 
     /**
+     * Load player sprite asynchronously using the avatar system
+     */
+    private async loadPlayerSprite(spriteComponent: Sprite, ownerId: string, playerManager: PlayerManager) {
+        try {
+            const playerSprite = await playerManager.getPlayerSpriteByUserId(ownerId);
+            if (playerSprite) {
+                spriteComponent.spriteFrame = playerSprite;
+            } else {
+                console.warn(`No sprite found for player ${ownerId}, using default`);
+                const defaultSprite = playerManager.getDefaultPlayerSprite();
+                if (defaultSprite) {
+                    spriteComponent.spriteFrame = defaultSprite;
+                }
+            }
+        } catch (error) {
+            console.error(`Error loading sprite for player ${ownerId}:`, error);
+            // Fallback to default sprite
+            const defaultSprite = playerManager.getDefaultPlayerSprite();
+            if (defaultSprite) {
+                spriteComponent.spriteFrame = defaultSprite;
+            }
+        }
+    }
+
+    /**
      * Spawn a player (current user or friend)
      */
     public spawnPlayer(playerData: PlayerData, playerManager?: PlayerManager): Player | null {
@@ -459,17 +484,8 @@ export class FishTank extends Component {
         // Add Sprite component for player visual
         const spriteComponent = playerNode.addComponent(Sprite);
         if (spriteComponent && playerManager) {
-            // Get player sprite from PlayerManager
-            const playerSprite = playerManager.getPlayerSpriteByUserId(playerData.ownerId);
-            if (playerSprite) {
-                spriteComponent.spriteFrame = playerSprite;
-            } else {
-                console.warn(`No sprite found for player ${playerData.ownerId}, using default`);
-                const defaultSprite = playerManager.getDefaultPlayerSprite();
-                if (defaultSprite) {
-                    spriteComponent.spriteFrame = defaultSprite;
-                }
-            }
+            // Get player sprite from PlayerManager (now supports avatar system)
+            this.loadPlayerSprite(spriteComponent, playerData.ownerId, playerManager);
         }
 
         // Initialize the player with data and bounds

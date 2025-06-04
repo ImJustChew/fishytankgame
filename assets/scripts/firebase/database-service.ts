@@ -3,6 +3,13 @@ import authService from './auth-service';
 import firebase from './firebase-compat.js';
 import { INITIAL_MONEY } from '../constants';
 
+export type UserAvatarCollection = {
+    [avatarId: string]: {
+        unlockedAt: number; // timestamp when avatar was unlocked
+        timesWon: number; // how many times user has won this avatar
+    };
+}
+
 export type UserData = {
     email: string;
     username: string;
@@ -17,6 +24,8 @@ export type UserData = {
         y: number;
         lastUpdated: number;
     };
+    selectedAvatar?: string; // currently selected avatar ID
+    avatarCollection?: UserAvatarCollection; // unlocked avatars
 }
 
 export type SavedFishType = {
@@ -391,6 +400,120 @@ class DatabaseService {
             return {};
         }
     }
+
+    /**
+     * Add an avatar to user's collection
+     */
+    async addAvatarToCollection(avatarId: string): Promise<void> {
+        const user = authService.getCurrentUser();
+        if (!user) {
+            console.warn('Cannot add avatar to collection: No user is signed in');
+            return;
+        }
+
+        try {
+            const now = Date.now();
+            const avatarRef = database.ref(`users/${user.uid}/avatarCollection/${avatarId}`);
+
+            // Check if avatar already exists in collection
+            const existing = await avatarRef.once('value');
+            const existingData = existing.val();
+
+            if (existingData) {
+                // Increment times won
+                await avatarRef.update({
+                    timesWon: existingData.timesWon + 1
+                });
+            } else {
+                // Add new avatar to collection
+                await avatarRef.set({
+                    unlockedAt: now,
+                    timesWon: 1
+                });
+            }
+
+            console.log(`Added avatar ${avatarId} to collection for user ${user.uid}`);
+        } catch (error) {
+            console.error('Error adding avatar to collection:', error);
+        }
+    }
+
+    /**
+     * Get user's avatar collection
+     */
+    async getAvatarCollection(): Promise<UserAvatarCollection | null> {
+        const user = authService.getCurrentUser();
+        if (!user) {
+            console.warn('Cannot get avatar collection: No user is signed in');
+            return null;
+        }
+
+        try {
+            const snapshot = await database.ref(`users/${user.uid}/avatarCollection`).once('value');
+            const data = snapshot.val();
+            console.log(`Retrieved avatar collection for user ${user.uid}:`, data);
+            return data || {};
+        } catch (error) {
+            console.error('Error getting avatar collection:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Set user's selected avatar
+     */
+    async setSelectedAvatar(avatarId: string): Promise<void> {
+        const user = authService.getCurrentUser();
+        if (!user) {
+            console.warn('Cannot set selected avatar: No user is signed in');
+            return;
+        }
+
+        try {
+            await database.ref(`users/${user.uid}/selectedAvatar`).set(avatarId);
+            console.log(`Set selected avatar to ${avatarId} for user ${user.uid}`);
+        } catch (error) {
+            console.error('Error setting selected avatar:', error);
+        }
+    }
+
+    /**
+     * Get user's selected avatar
+     */
+    async getSelectedAvatar(): Promise<string | null> {
+        const user = authService.getCurrentUser();
+        if (!user) {
+            console.warn('Cannot get selected avatar: No user is signed in');
+            return null;
+        }
+
+        try {
+            const snapshot = await database.ref(`users/${user.uid}/selectedAvatar`).once('value');
+            const data = snapshot.val();
+            console.log(`Retrieved selected avatar for user ${user.uid}:`, data);
+            return data || null;
+        } catch (error) {
+            console.error('Error getting selected avatar:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Get selected avatar for a specific user (for displaying other players)
+     */
+    async getSelectedAvatarByUid(uid: string): Promise<string | null> {
+        try {
+            const snapshot = await database.ref(`users/${uid}/selectedAvatar`).once('value');
+            const data = snapshot.val();
+            console.log(`Retrieved selected avatar for user ${uid}:`, data);
+            return data || null;
+        } catch (error) {
+            console.error('Error getting selected avatar by UID:', error);
+            return null;
+        }
+    }
+
+    // Add to the end of the class, before the closing brace
 }
 
 const databaseService = new DatabaseService();
