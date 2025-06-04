@@ -4,7 +4,7 @@ import { Fish } from './Fish';
 import { FishManager } from './FishManager';
 import { FishFoodManager } from './FishFoodManager';
 import { FishFood } from './FishFood'
-import { FishFoodType } from './FishFoodData'
+import { FishFoodType, FISH_FOOD_LIST } from './FishFoodData'
 
 
 const { ccclass, property } = _decorator;
@@ -22,8 +22,13 @@ export class FishTank extends Component {
     private tankBounds: { min: Vec3, max: Vec3 } = { min: new Vec3(), max: new Vec3() };
 
     private activeFishFoodCount = 0;
+
+    private currentActiveFishFood: FishFoodType | null = null;
+    
     start() {
         this.calculateTankBounds();
+        // always set default fish food value
+        this.setCurrentActiveFishFoodByIdx(0);
     }
 
     private calculateTankBounds() {
@@ -205,11 +210,33 @@ export class FishTank extends Component {
         return this.activeFish.length;
     }
 
+    public getFishFoodCount(): number {
+        return this.activeFishFoodCount;
+    }
+    /**
+     * Get Current active food list 
+     * @param idx 
+     * @returns 
+     */
+    public getCurrentActiveFishFood(): FishFoodType | null {
+        return this.currentActiveFishFood;
+    }
+
     public getFishDataArray(): SavedFishType[] {
         return this.activeFish
             .map(fish => fish.getFishData())
             .filter(data => data !== null) as SavedFishType[];
     }
+
+    /**
+     * Set the current Active fish food maybe by idx in an array, 
+     * for example from UI manager by passing an index 
+     * @param index 
+     */
+    public setCurrentActiveFishFoodByIdx(index) {
+        this.currentActiveFishFood = FISH_FOOD_LIST[index];
+    }
+
 
     public updateTankBounds() {
         this.calculateTankBounds();

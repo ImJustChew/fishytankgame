@@ -37,7 +37,8 @@ export class FishTankManager extends Component {
 
         // Listen for mouse/touch clicks
         input.on(Input.EventType.TOUCH_END, this.onClickEnd, this);
-    }    /**
+    }    
+    /**
      * Set up real-time listener for fish data changes
      */
     private setupFishDataListener() {
@@ -159,7 +160,7 @@ export class FishTankManager extends Component {
     }
 
     private onClickEnd(event: EventTouch) {
-        const currentFoodType = this.fishFoodManager.getCurrentActiveFishFood();
+        const currentFoodType = this.fishTank.getCurrentActiveFishFood();
         const touchPos = event.getUILocation();
         if (!touchPos) {
             console.warn('Could not convert to world space.');

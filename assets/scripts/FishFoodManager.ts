@@ -23,8 +23,7 @@ export class FishFoodManager extends Component {
 
     start() {
         this.initializeSpriteMap();
-        // always set default food when starting 
-        this.setCurrentActiveFishFoodByIdx(0);
+
     }
 
     /**
@@ -46,24 +45,6 @@ export class FishFoodManager extends Component {
         }
 
         console.log(`[FishFoodManager] Initialized with ${this.spriteMap.size} food sprites`);
-    }
-
-    /**
-     * Get Current active food list 
-     * @param idx 
-     * @returns 
-     */
-    public getCurrentActiveFishFood() : FishFoodType | null {
-        return this.currentActiveFishFood;
-    }
-
-    /**
-     * Set the current Active fish food maybe by idx in an array, 
-     * for example from UI manager by passing an index 
-     * @param index 
-     */
-    public setCurrentActiveFishFoodByIdx(index) {
-        this.currentActiveFishFood = FISH_FOOD_LIST[index];
     }
 
     /**
