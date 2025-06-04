@@ -40,6 +40,8 @@ export class Fish extends Component {
     }
 
     update(deltaTime: number) {
+        const variation = this.changeDirectionInterval * 0.5; // 50% variation
+        const randomInterval = this.changeDirectionInterval + (Math.random() - 0.5) * 2 * variation;
         if (this.targetPos) {
             const currentPos = this.node.getPosition();
             const direction = new Vec3();
@@ -59,13 +61,17 @@ export class Fish extends Component {
                 const movement = direction.multiplyScalar(this.moveSpeed * 3 * deltaTime);
                 this.node.setPosition(currentPos.add(movement));
             }
+        } else {
+            if (this.moveTween == null) {
+                // If no target, continue normal movement
+                this.startMovement();
+            }
         }
 
         this.directionTimer += deltaTime;
 
         // Add random variation to direction change interval (±50% of base interval)
-        const variation = this.changeDirectionInterval * 0.5; // 50% variation
-        const randomInterval = this.changeDirectionInterval + (Math.random() - 0.5) * 2 * variation;
+
 
         // Change direction randomly or when hitting bounds
         if (!this.targetPos && (this.directionTimer >= randomInterval || this.isHittingBounds())) {

@@ -11,7 +11,12 @@ export type UserData = {
     lastOnline: number;
     friends: {
         [uid: string]: true;
-    }
+    };
+    playerPosition?: {
+        x: number;
+        y: number;
+        lastUpdated: number;
+    };
 }
 
 export type SavedFishType = {
@@ -254,7 +259,12 @@ class DatabaseService {
             money: INITIAL_MONEY,
             lastCollectionTime: Date.now(),
             lastOnline: Date.now(),
-            friends: {}
+            friends: {},
+            playerPosition: {
+                x: 0,
+                y: 0,
+                lastUpdated: Date.now()
+            }
         };
 
         try {
@@ -263,6 +273,122 @@ class DatabaseService {
         } catch (error) {
             console.error('Error creating user profile:', error);
             throw error;
+        }
+    }
+
+    /**
+     * Update player position in database
+     */
+    async updatePlayerPosition(x: number, y: number): Promise<void> {
+        const user = authService.getCurrentUser();
+        if (!user) {
+            console.warn('Cannot update player position: No user is signed in');
+            return;
+        }
+
+        try {
+            const positionData = {
+                x: Math.round(x * 10) / 10, // Round to 1 decimal place
+                y: Math.round(y * 10) / 10,
+                lastUpdated: Date.now()
+            };
+
+            await database.ref(`users/${user.uid}/playerPosition`).set(positionData);
+            console.log(`Player position updated for user ${user.uid}:`, positionData);
+        } catch (error) {
+            console.error('Error updating player position:', error);
+        }
+    }
+
+    /**
+     * Get player position for a specific user
+     */
+    async getPlayerPosition(uid: string): Promise<{ x: number, y: number, lastUpdated: number } | null> {
+        try {
+            const snapshot = await database.ref(`users/${uid}/playerPosition`).once('value');
+            const data = snapshot.val();
+            console.log(`Retrieved player position for user ${uid}:`, data);
+            return data || null;
+        } catch (error) {
+            console.error('Error getting player position:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Subscribe to player position updates for a specific user
+     * @param uid User ID to watch
+     * @param callback Function to call when position changes
+     * @returns Firebase unsubscribe function or null if invalid
+     */
+    onPlayerPositionChanged(uid: string, callback: (position: { x: number, y: number, lastUpdated: number } | null) => void): (() => void) | null {
+        if (!uid) {
+            console.warn('Cannot subscribe to player position: Invalid UID');
+            return null;
+        }
+
+        const positionRef = database.ref(`users/${uid}/playerPosition`);
+
+        const unsubscribe = positionRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            console.log(`Player position updated for user ${uid}:`, data);
+            callback(data);
+        }, (error) => {
+            console.error('Error in player position listener:', error);
+            callback(null);
+        });
+
+        // Return Firebase's off function
+        return () => {
+            positionRef.off('value', unsubscribe);
+        };
+    }
+
+    /**
+     * Get all friends' player positions for displaying other players in tank
+     */
+    async getFriendsPlayerPositions(): Promise<{ [uid: string]: { x: number, y: number, username: string, lastUpdated: number } }> {
+        const user = authService.getCurrentUser();
+        if (!user) {
+            console.warn('Cannot get friends player positions: No user is signed in');
+            return {};
+        }
+
+        try {
+            // First get current user's friends list
+            const userData = await this.getUserData();
+            if (!userData || !userData.friends) {
+                return {};
+            }
+
+            const friendsData: { [uid: string]: { x: number, y: number, username: string, lastUpdated: number } } = {};
+
+            // Get position and username for each friend
+            for (const friendUid of Object.keys(userData.friends)) {
+                try {
+                    const [positionData, friendUserData] = await Promise.all([
+                        this.getPlayerPosition(friendUid),
+                        this.getUserDataByUid(friendUid)
+                    ]);
+
+                    if (positionData && friendUserData) {
+                        friendsData[friendUid] = {
+                            x: positionData.x,
+                            y: positionData.y,
+                            username: friendUserData.username,
+                            lastUpdated: positionData.lastUpdated
+                        };
+                    }
+                } catch (error) {
+                    console.error(`Error getting data for friend ${friendUid}:`, error);
+                }
+            }
+
+            console.log('Retrieved friends player positions:', friendsData);
+            return friendsData;
+        } catch (error) {
+            console.error('Error getting friends player positions:', error);
+            return {};
         }
     }
 }

@@ -5,6 +5,10 @@ import { FishManager } from './FishManager';
 import { FishFoodManager } from './FishFoodManager';
 import { FishFood } from './FishFood'
 import { FishFoodType, FISH_FOOD_LIST } from './FishFoodData'
+import { Player, PlayerData } from './Player';
+import { PlayerManager } from './PlayerManager';
+import databaseService from './firebase/database-service';
+import authService from './firebase/auth-service';
 
 
 const { ccclass, property } = _decorator;
@@ -18,11 +22,16 @@ export class FishTank extends Component {
     @property
     maxFishFoodCount: number = 20;
 
+    @property
+    maxPlayerCount: number = 5; // Max players that can be displayed (current user + friends)
+
     private activeFish: Fish[] = [];
     private activeFishFood: FishFood[] = []
+    private activePlayers: Player[] = [];
     private tankBounds: { min: Vec3, max: Vec3 } = { min: new Vec3(), max: new Vec3() };
 
     private currentActiveFishFood: FishFoodType | null = null;
+    private currentUser: Player | null = null; // Reference to current user's player
 
     start() {
         this.calculateTankBounds();
@@ -319,6 +328,16 @@ export class FishTank extends Component {
                 }
             }
         });
+
+        // Update bounds for existing players
+        this.activePlayers.forEach(player => {
+            if (player && player.initializePlayer) {
+                const playerData = player.getPlayerData();
+                if (playerData) {
+                    player.initializePlayer(playerData, this.tankBounds);
+                }
+            }
+        });
     }
 
     public addRandomFish(fishManager: FishManager) {
@@ -333,7 +352,218 @@ export class FishTank extends Component {
         this.spawnFish(randomFishData, fishManager);
     }
 
+    // ==================== PLAYER MANAGEMENT METHODS ====================
+
+    /**
+     * Spawn the current user's player (controllable)
+     */
+    public async spawnCurrentUserPlayer(playerManager?: PlayerManager): Promise<Player | null> {
+        const user = authService.getCurrentUser();
+        if (!user) {
+            console.warn('Cannot spawn current user player: No user is signed in');
+            return null;
+        }
+
+        // Check if current user player already exists
+        if (this.currentUser) {
+            console.log('Current user player already spawned');
+            return this.currentUser;
+        }
+
+        // Get or create player position from database
+        let playerPosition = await databaseService.getPlayerPosition(user.uid);
+        if (!playerPosition) {
+            // Create default position if none exists
+            playerPosition = { x: 0, y: 0, lastUpdated: Date.now() };
+            await databaseService.updatePlayerPosition(0, 0);
+        }
+
+        const playerData: PlayerData = {
+            ownerId: user.uid,
+            x: playerPosition.x,
+            y: playerPosition.y,
+            isCurrentUser: true
+        };
+
+        const player = this.spawnPlayer(playerData, playerManager);
+        if (player) {
+            this.currentUser = player;
+            console.log('Current user player spawned successfully');
+        }
+
+        return player;
+    }
+
+    /**
+     * Load and display friends' players in the tank
+     */
+    public async loadFriendsPlayers(playerManager?: PlayerManager): Promise<void> {
+        try {
+            // Remove existing friend players (keep current user)
+            this.clearFriendPlayers();
+
+            // Get friends' player positions
+            const friendsData = await databaseService.getFriendsPlayerPositions();
+
+            // Spawn friend players (display-only)
+            for (const friendUid in friendsData) {
+                if (friendsData.hasOwnProperty(friendUid)) {
+                    if (this.activePlayers.length >= this.maxPlayerCount) {
+                        console.warn('Maximum player count reached, cannot spawn more friend players');
+                        break;
+                    }
+
+                    const friendInfo = friendsData[friendUid];
+                    const playerData: PlayerData = {
+                        id: friendUid,
+                        ownerId: friendUid,
+                        x: friendInfo.x,
+                        y: friendInfo.y,
+                        isCurrentUser: false
+                    };
+
+                    const friendPlayer = this.spawnPlayer(playerData, playerManager);
+                    if (friendPlayer) {
+                        console.log(`Spawned friend player: ${friendInfo.username} at (${friendInfo.x}, ${friendInfo.y})`);
+                    }
+                }
+            }
+
+            console.log(`Loaded ${Object.keys(friendsData).length} friend players`);
+        } catch (error) {
+            console.error('Error loading friends players:', error);
+        }
+    }
+
+    /**
+     * Spawn a player (current user or friend)
+     */
+    public spawnPlayer(playerData: PlayerData, playerManager?: PlayerManager): Player | null {
+        if (this.activePlayers.length >= this.maxPlayerCount) {
+            console.warn('Maximum player count reached, cannot spawn more players');
+            return null;
+        }
+
+        // Create a new node for the player
+        const playerNode = new Node(`Player_${playerData.ownerId}`);
+        this.node.addChild(playerNode);
+
+        // Add Player component
+        const playerComponent = playerNode.addComponent(Player);
+        if (!playerComponent) {
+            console.error('Failed to add Player component');
+            playerNode.destroy();
+            return null;
+        }
+
+        // Add Sprite component for player visual
+        const spriteComponent = playerNode.addComponent(Sprite);
+        if (spriteComponent && playerManager) {
+            // Get player sprite from PlayerManager
+            const playerSprite = playerManager.getPlayerSpriteByUserId(playerData.ownerId);
+            if (playerSprite) {
+                spriteComponent.spriteFrame = playerSprite;
+            } else {
+                console.warn(`No sprite found for player ${playerData.ownerId}, using default`);
+                const defaultSprite = playerManager.getDefaultPlayerSprite();
+                if (defaultSprite) {
+                    spriteComponent.spriteFrame = defaultSprite;
+                }
+            }
+        }
+
+        // Initialize the player with data and bounds
+        playerComponent.initializePlayer(playerData, this.tankBounds);
+
+        // Add to active players array
+        this.activePlayers.push(playerComponent);
+
+        // Set up cleanup when player is destroyed
+        playerNode.on(Node.EventType.NODE_DESTROYED, () => {
+            const index = this.activePlayers.indexOf(playerComponent);
+            if (index > -1) {
+                this.activePlayers.splice(index, 1);
+            }
+
+            // Clear current user reference if this was the current user
+            if (this.currentUser === playerComponent) {
+                this.currentUser = null;
+            }
+        });
+
+        return playerComponent;
+    }
+
+    /**
+     * Remove all friend players but keep current user player
+     */
+    public clearFriendPlayers() {
+        const friendPlayers = this.activePlayers.filter(player => {
+            const playerData = player.getPlayerData();
+            return playerData && !playerData.isCurrentUser;
+        });
+
+        friendPlayers.forEach(player => {
+            this.removePlayer(player);
+        });
+
+        console.log(`Cleared ${friendPlayers.length} friend players`);
+    }
+
+    /**
+     * Remove all players including current user
+     */
+    public clearAllPlayers() {
+        this.activePlayers.forEach(player => {
+            if (player && player.node) {
+                player.node.destroy();
+            }
+        });
+        this.activePlayers = [];
+        this.currentUser = null;
+        console.log('Cleared all players');
+    }
+
+    /**
+     * Remove a specific player
+     */
+    public removePlayer(player: Player) {
+        const index = this.activePlayers.indexOf(player);
+        if (index > -1) {
+            this.activePlayers.splice(index, 1);
+
+            // Clear current user reference if removing current user
+            if (this.currentUser === player) {
+                this.currentUser = null;
+            }
+
+            player.node.destroy();
+        }
+    }
+
+    /**
+     * Get the current user's player
+     */
+    public getCurrentUserPlayer(): Player | null {
+        return this.currentUser;
+    }
+
+    /**
+     * Get all active players
+     */
+    public getActivePlayers(): Player[] {
+        return [...this.activePlayers];
+    }
+
+    /**
+     * Get the number of active players
+     */
+    public getPlayerCount(): number {
+        return this.activePlayers.length;
+    }
+
     onDestroy() {
         this.clearAllFish();
+        this.clearAllPlayers();
     }
 }
