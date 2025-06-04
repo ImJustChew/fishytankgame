@@ -5,24 +5,24 @@ const { ccclass, property } = _decorator;
 
 @ccclass('FriendItem')
 export class FriendItem extends Component {
-    
+
     @property(Label)
     usernameLabel: Label = null;
-    
+
     @property(Label)
     lastLoginLabel: Label = null;
-    
+
     @property(Label)
     statusLabel: Label = null;
 
     @property(Label)
     moneyLabel: Label = null;
-    
+
     @property(Button)
     visitButton: Button = null;
 
     @property(Button)
-    removeButton: Button = null; 
+    removeButton: Button = null;
 
     private friendData: FriendData = null;
     private onRemoveCallback: (friendUid: string) => void = null;
@@ -42,7 +42,7 @@ export class FriendItem extends Component {
      * initializes the friend item with data
      */
     setupFriendItem(
-        friendData: FriendData, 
+        friendData: FriendData,
         hasStolen: boolean,
         onRemoveCallback?: (friendUid: string) => void,
         onAcceptCallback?: (friendUid: string) => void,
@@ -89,7 +89,7 @@ export class FriendItem extends Component {
         const now = Date.now();
         const timeDiff = now - lastOnlineTime;
         const minutes = Math.floor(timeDiff / (1000 * 60));
-        
+
         if (minutes < 1) {
             return 'last login: just now';
         } else if (minutes < 60) {
@@ -122,6 +122,7 @@ export class FriendItem extends Component {
         }
     }
 
+  
     /**
      * handle the visit button click event
      * also, if the friend is in pending state, the visit button will be changed to "accept" button

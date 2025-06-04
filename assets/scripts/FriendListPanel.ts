@@ -7,16 +7,16 @@ const { ccclass, property } = _decorator;
 
 @ccclass('FriendListPanel')
 export class FriendListPanel extends Component {
-    
+
     @property(ScrollView)
     scrollView: ScrollView = null;
-    
+
     @property(Node)
     contentNode: Node = null;
-    
+
     @property(Prefab)
     friendItemPrefab: Prefab = null;
-    
+
     @property(Button)
     closeButton: Button = null;
 
@@ -154,7 +154,7 @@ export class FriendListPanel extends Component {
             // randomly return true or false
             return Math.random() < 0.5;
         }
-        return this.stealHistory.incoming.some(attempt => 
+        return this.stealHistory.incoming.some(attempt =>
             attempt.thiefUid === friendUid && attempt.success
         );
     }
