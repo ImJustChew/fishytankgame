@@ -7,16 +7,16 @@ const { ccclass, property } = _decorator;
 
 @ccclass('FriendListPanel')
 export class FriendListPanel extends Component {
-    
+
     @property(ScrollView)
     scrollView: ScrollView = null;
-    
+
     @property(Node)
     contentNode: Node = null;
-    
+
     @property(Prefab)
     friendItemPrefab: Prefab = null;
-    
+
     @property(Button)
     closeButton: Button = null;
 
@@ -113,7 +113,7 @@ export class FriendListPanel extends Component {
             // randomly return true or false
             return Math.random() < 0.5;
         }
-        return this.stealHistory.incoming.some(attempt => 
+        return this.stealHistory.incoming.some(attempt =>
             attempt.thiefUid === friendUid && attempt.success
         );
     }
@@ -124,8 +124,12 @@ export class FriendListPanel extends Component {
      */
     private clearFriendItems() {
         this.friendItems.forEach(item => {
-            if (item.node && item.node.isValid) {
-                item.node.destroy();
+            if (item && item.node && item.node.isValid) {
+                try {
+                    item.node.destroy();
+                } catch (error) {
+                    console.warn('Error destroying friend item node:', error);
+                }
             }
         });
         this.friendItems = [];
@@ -228,10 +232,10 @@ export class FriendListPanel extends Component {
     }
 
     onDestroy() {
-        if (this.closeButton) {
+        if (this.closeButton && this.closeButton.node && this.closeButton.node.isValid) {
             this.closeButton.node.off(Button.EventType.CLICK, this.onCloseClicked, this);
         }
-        if (this.removeFriendButton) {
+        if (this.removeFriendButton && this.removeFriendButton.node && this.removeFriendButton.node.isValid) {
             this.removeFriendButton.node.off(Button.EventType.CLICK, this.toggleRemoveMode, this);
         }
         this.clearFriendItems();

@@ -5,21 +5,21 @@ const { ccclass, property } = _decorator;
 
 @ccclass('FriendItem')
 export class FriendItem extends Component {
-    
+
     @property(Label)
     usernameLabel: Label = null;
-    
+
     @property(Label)
     lastLoginLabel: Label = null;
-    
+
     @property(Label)
     statusLabel: Label = null;
-    
+
     @property(Button)
     visitButton: Button = null;
 
     @property(Button)
-    removeButton: Button = null; 
+    removeButton: Button = null;
 
     private friendData: FriendData = null;
     private onRemoveCallback: (friendUid: string) => void = null;
@@ -28,13 +28,16 @@ export class FriendItem extends Component {
         if (this.visitButton) {
             this.visitButton.node.on(Button.EventType.CLICK, this.onVisitClicked, this);
         }
+        if (this.removeButton) {
+            this.removeButton.node.on(Button.EventType.CLICK, this.onRemoveClicked, this);
+        }
     }
 
     /**
      * initializes the friend item with data
      */
     setupFriendItem(
-        friendData: FriendData, 
+        friendData: FriendData,
         hasStolen: boolean,
         onRemoveCallback?: (friendUid: string) => void
     ) {
@@ -62,7 +65,7 @@ export class FriendItem extends Component {
         const now = Date.now();
         const timeDiff = now - lastOnlineTime;
         const minutes = Math.floor(timeDiff / (1000 * 60));
-        
+
         if (minutes < 1) {
             return 'last login: just now';
         } else if (minutes < 60) {
@@ -93,7 +96,7 @@ export class FriendItem extends Component {
         }
     }
 
-    
+
     private onVisitClicked() {
         if (this.onVisitCallback && this.friendData) {
             this.onVisitCallback(this.friendData.uid);
@@ -124,10 +127,10 @@ export class FriendItem extends Component {
     }
 
     onDestroy() {
-        if (this.visitButton) {
+        if (this.visitButton && this.visitButton.node && this.visitButton.node.isValid) {
             this.visitButton.node.off(Button.EventType.CLICK, this.onVisitClicked, this);
         }
-        if (this.removeButton) {
+        if (this.removeButton && this.removeButton.node && this.removeButton.node.isValid) {
             this.removeButton.node.off(Button.EventType.CLICK, this.onRemoveClicked, this);
         }
     }
