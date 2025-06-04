@@ -10,7 +10,7 @@ export class Fish extends Component {
     moveSpeed: number = 50;
 
     @property
-    maxHealth: number = 120;
+    maxHealth: number = 500;
 
     @property
     changeDirectionInterval: number = 3; // Increased from 2 to 3 seconds for longer swimming segments
@@ -67,7 +67,7 @@ export class Fish extends Component {
             this.changeDirection();
             this.directionTimer = 0;
         }
-        
+
     }
 
     public initializeFish(fishData: SavedFishType, tankBounds: { min: Vec3, max: Vec3 }) {
