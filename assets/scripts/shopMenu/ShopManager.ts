@@ -1,11 +1,11 @@
 // Assets/Scripts/shop/ShopManager.ts
 import { _decorator, Component, Prefab, instantiate, ScrollView, Label, Node, UITransform, Color } from 'cc';
-import { FishItem }        from './FishItem';
+import { FishItem } from './FishItem';
 import { FISH_LIST, Fish } from '../FishData';
-import { FishManager }      from '../FishManager';
+import { FishManager } from '../FishManager';
 
 // 下面两行假设你已经在 Assets/Scripts/shop/ 目录里
-import { purchaseFish }     from './purchaseFish';
+import { purchaseFish } from './purchaseFish';
 import databaseService, { UserData } from '../firebase/database-service';
 
 const { ccclass, property } = _decorator;
@@ -35,7 +35,7 @@ export class ShopManager extends Component {
   async start() {
     await this.fetchOrInitMoney();
     this.populateFishList();
-    
+
     // 初始化警告标签
     if (this.warningLabel) {
       this.warningLabel.node.active = false;
@@ -91,18 +91,18 @@ export class ShopManager extends Component {
     console.log('onFishBought event:', event);
     console.log('Event target:', event.target);
     console.log('Event type:', event.type);
-    
+
     // Check if event itself has id and price properties
-    const detail = (event && event.detail) ? 
-      event.detail as { id: string; price: number } : 
-      (event && event.id && event.price) ? 
-        { id: event.id, price: event.price } : 
+    const detail = (event && event.detail) ?
+      event.detail as { id: string; price: number } :
+      (event && event.id && event.price) ?
+        { id: event.id, price: event.price } :
         undefined;
-        
+
     if (!detail) {
-        // Event triggered without proper detail
-        console.warn('onFishBought: Received event without detail, ignoring');
-        return;
+      // Event triggered without proper detail
+      console.warn('onFishBought: Received event without detail, ignoring');
+      return;
     }
     const { id: typeId, price } = detail;
     if (this.money < price) {
@@ -143,16 +143,16 @@ export class ShopManager extends Component {
    */
   private showWarning(message: string) {
     if (!this.warningLabel) return;
-    
+
     // 设置警告文本
     this.warningLabel.string = message;
-    
+
     // 设置警告颜色（红色）
     this.warningLabel.color = new Color(255, 100, 100, 255);
-    
+
     // 显示警告
     this.warningLabel.node.active = true;
-    
+
     // 设置定时器，几秒后自动隐藏
     this.scheduleOnce(() => {
       if (this.warningLabel) {

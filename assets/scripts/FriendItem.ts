@@ -122,7 +122,7 @@ export class FriendItem extends Component {
         }
     }
 
-  
+
     /**
      * handle the visit button click event
      * also, if the friend is in pending state, the visit button will be changed to "accept" button
@@ -131,7 +131,7 @@ export class FriendItem extends Component {
     private onVisitClicked() {
         if (this.isFriendPending) {
             console.log('Accepting friend request:', this.friendData.uid);
-            if(this.onAcceptCallback && this.friendData) {
+            if (this.onAcceptCallback && this.friendData) {
                 this.onAcceptCallback(this.friendData.uid);
             }
             return; // do not call the visit callback if it's a pending friend request

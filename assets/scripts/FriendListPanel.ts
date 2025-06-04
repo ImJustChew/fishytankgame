@@ -28,7 +28,7 @@ export class FriendListPanel extends Component {
 
     @property(Node)
     addFriendPanel: Node = null;
-    
+
     @property(Label)
     notificationLabel: Label = null;
 
@@ -42,7 +42,7 @@ export class FriendListPanel extends Component {
     private stealHistory: { incoming: StealAttempt[]; outgoing: StealAttempt[] } = { incoming: [], outgoing: [] };
 
     private removeMode: boolean = false; // whether remove button is enabled
-    private isAddFriendPanelVisible: boolean = false; 
+    private isAddFriendPanelVisible: boolean = false;
 
     onLoad() {
         if (this.closeButton) {
@@ -67,8 +67,8 @@ export class FriendListPanel extends Component {
         this.generateTestFriendItems(true); // two testing item, delete after testing
         this.generateTestFriendItems(false); // two testing item, delete after testing
         this.adjustContentHeight();
-        this.addFriendPanel.active = false; 
-        this.isAddFriendPanelVisible = false; 
+        this.addFriendPanel.active = false;
+        this.isAddFriendPanelVisible = false;
     }
 
 
@@ -188,7 +188,7 @@ export class FriendListPanel extends Component {
             this.addFriendEditBox.string = '';
         }
         if (this.notificationLabel) {
-            this.notificationLabel.node.active = false; 
+            this.notificationLabel.node.active = false;
         }
         this.node.active = false;
         console.log('friends panel closed');
@@ -200,7 +200,7 @@ export class FriendListPanel extends Component {
      */
     show() {
         this.node.active = true;
-        this.addFriendPanel.active = false; 
+        this.addFriendPanel.active = false;
         this.loadFriendsList();
     }
 
@@ -304,7 +304,7 @@ export class FriendListPanel extends Component {
                 this.addFriendEditBox.string = '';
             }
             if (this.notificationLabel) {
-                this.notificationLabel.node.active = false; 
+                this.notificationLabel.node.active = false;
             }
         }
     }
@@ -322,14 +322,14 @@ export class FriendListPanel extends Component {
     }
 
     private showNotification(message: string, success: boolean = true) {
-    if (!this.notificationLabel) return;
-    this.notificationLabel.string = message;
-    this.notificationLabel.color = success ? new Color(100, 255, 100, 255) : new Color(255, 100, 100, 255);
-    this.notificationLabel.node.active = true;
-    this.scheduleOnce(() => {
-        this.notificationLabel.node.active = false;
-    }, 3);
-}
+        if (!this.notificationLabel) return;
+        this.notificationLabel.string = message;
+        this.notificationLabel.color = success ? new Color(100, 255, 100, 255) : new Color(255, 100, 100, 255);
+        this.notificationLabel.node.active = true;
+        this.scheduleOnce(() => {
+            this.notificationLabel.node.active = false;
+        }, 3);
+    }
 
     onDestroy() {
         if (this.closeButton && this.closeButton.node && this.closeButton.node.isValid) {

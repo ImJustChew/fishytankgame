@@ -2,6 +2,10 @@ import { _decorator, Component, Node, Prefab, instantiate, Vec3, UITransform, Sp
 import { SavedFishType } from './firebase/database-service';
 import { Fish } from './Fish';
 import { FishManager } from './FishManager';
+import { FishFoodManager } from './FishFoodManager';
+import { FishFood } from './FishFood'
+import { FishFoodType, FISH_FOOD_LIST } from './FishFoodData'
+
 
 const { ccclass, property } = _decorator;
 
@@ -11,11 +15,19 @@ export class FishTank extends Component {
     @property
     maxFishCount: number = 10;
 
+    @property
+    maxFishFoodCount: number = 20;
+
     private activeFish: Fish[] = [];
+    private activeFishFood: FishFood[] = []
     private tankBounds: { min: Vec3, max: Vec3 } = { min: new Vec3(), max: new Vec3() };
 
+    private currentActiveFishFood: FishFoodType | null = null;
+    
     start() {
         this.calculateTankBounds();
+        // always set default fish food value
+        this.setCurrentActiveFishFoodByIdx(0);
     }
 
     private calculateTankBounds() {
@@ -107,6 +119,73 @@ export class FishTank extends Component {
         return fishComponent;
     }
 
+    // public spawnFishFoodFromData(fishFood: FishFoodType, fishFoodManager: FishFoodManager) {
+    //     // Recalculate tank bounds to ensure they're up to date
+    //     this.calculateTankBounds();
+
+    //     // Limit the number of fish to spawn
+    //     // const fishToSpawn = fishDataArray.slice(0, this.maxFishCount);
+
+    //     this.spawnFishFood(fishFood, fishFoodManager);
+    // }
+
+    public spawnFishFood(fishFoodType: FishFoodType, spawnLocation: Vec3, fishFoodManager: FishFoodManager): FishFood | null {
+        this.calculateTankBounds();
+
+        // the click is out of bound, return null
+        if (spawnLocation.x < this.tankBounds.min.x || spawnLocation.y < this.tankBounds.min.y
+            || spawnLocation.x > this.tankBounds.max.x || spawnLocation.y > this.tankBounds.max.y
+        ) {
+            return null;
+        }
+        // make condition when food in aquarium has already reached a certain amount to avoid lag
+        if (this.activeFishFood.length >= this.maxFishFoodCount) {
+            console.warn('Maximum fish food count reached, cannot spawn more food');
+            return null;
+        }
+
+        // Get sprite frame for the fish type
+        const spriteFrame = fishFoodManager.getFishFoodSpriteById(fishFoodType.id);
+        if (!spriteFrame) {
+            console.warn(`No sprite found for fish type: ${fishFoodType.id}, spawning without sprite`);
+        }
+
+        // Create a new node for the fish
+        const fishFoodNode = new Node(`Fish_${fishFoodType.id}`);
+        this.node.addChild(fishFoodNode);
+
+        // Add Fish component
+        const fishFoodComponent = fishFoodNode.addComponent(FishFood);
+        if (!fishFoodComponent) {
+            console.error('Failed to add Fish Food component');
+            fishFoodNode.destroy();
+            return null;
+        }
+
+        // Add Sprite component and set sprite frame
+        const spriteComponent = fishFoodNode.addComponent(Sprite);
+        if (spriteComponent && spriteFrame) {
+            spriteComponent.spriteFrame = spriteFrame;
+        }
+
+        // Initialize the fish food with data and bounds
+        fishFoodComponent.initializeFishFood(fishFoodType, spawnLocation, this.tankBounds);
+
+        // Add to active fish food array
+        this.activeFishFood.push(fishFoodComponent);
+
+        // Set up cleanup when fish food is destroyed
+        fishFoodNode.on(Node.EventType.NODE_DESTROYED, () => {
+            const index = this.activeFishFood.indexOf(fishFoodComponent);
+            if (index > -1) {
+                this.activeFishFood.splice(index, 1);
+            }
+        });
+
+        return fishFoodComponent;
+    }
+
+
     public removeFish(fish: Fish) {
         const index = this.activeFish.indexOf(fish);
         if (index > -1) {
@@ -128,8 +207,24 @@ export class FishTank extends Component {
         return [...this.activeFish];
     }
 
+    public getActiveFishFood(): FishFood[] {
+        return [...this.activeFishFood]
+    }
+
     public getFishCount(): number {
         return this.activeFish.length;
+    }
+
+    public getFishFoodCount(): number {
+        return this.activeFishFood.length;
+    }
+    /**
+     * Get Current active food list 
+     * @param idx 
+     * @returns 
+     */
+    public getCurrentActiveFishFood(): FishFoodType | null {
+        return this.currentActiveFishFood;
     }
 
     public getFishDataArray(): SavedFishType[] {
@@ -137,6 +232,16 @@ export class FishTank extends Component {
             .map(fish => fish.getFishData())
             .filter(data => data !== null) as SavedFishType[];
     }
+
+    /**
+     * Set the current Active fish food maybe by idx in an array, 
+     * for example from UI manager by passing an index 
+     * @param index 
+     */
+    public setCurrentActiveFishFoodByIdx(index) {
+        this.currentActiveFishFood = FISH_FOOD_LIST[index];
+    }
+
 
     public updateTankBounds() {
         this.calculateTankBounds();
