@@ -1,9 +1,12 @@
-import { _decorator, Component, Node } from 'cc';
+import { _decorator, Component, Node, input, Input, EventTouch, Camera, Vec3, UITransform } from 'cc';
 import { FishTank } from './FishTank';
 import { FishManager } from './FishManager';
+import { FishFoodManager } from './FishFoodManager';
 import databaseService, { SavedFishType } from './firebase/database-service';
 import authService from './firebase/auth-service';
 import { FISH_LIST } from './FishData';
+import { FISH_FOOD_LIST } from './FishFoodData';
+import { FishFood } from './FishFood';
 
 const { ccclass, property } = _decorator;
 
@@ -16,8 +19,12 @@ export class FishTankManager extends Component {
     @property(FishManager)
     fishManager: FishManager | null = null;
 
+    @property(FishFoodManager)
+    fishFoodManager: FishFoodManager | null = null;
+
     @property
     autoLoadFish: boolean = true;
+
 
     private unsubscribeFishData: (() => void) | null = null; start() {
         if (this.autoLoadFish) {
@@ -27,6 +34,9 @@ export class FishTankManager extends Component {
             this.loadFishFromDatabase();
         }
         this.spawnDefaultFish();
+
+        // Listen for mouse/touch clicks
+        input.on(Input.EventType.TOUCH_END, this.onClickEnd, this);
     }    /**
      * Set up real-time listener for fish data changes
      */
@@ -107,8 +117,8 @@ export class FishTankManager extends Component {
         const user = authService.getCurrentUser();
         const ownerId = user ? user.uid : 'unknown-user';
 
-        // Create some default fish for testing using IDs from FishData
-        const defaultFishTypes = FISH_LIST.map(fish => fish.id).slice(0, 6); // Use first 3 types for simplicity
+        // Create some default fish food for testing using IDs from FishFoodData
+        const defaultFishTypes = FISH_LIST.map(fish => fish.id).slice(0, 3); // Use first 3 types for simplicity
         const defaultFish: SavedFishType[] = defaultFishTypes.map((type, index) => ({
             ownerId: ownerId,
             type: type,
@@ -146,6 +156,21 @@ export class FishTankManager extends Component {
             this.autoLoadFish = false;
             this.cleanup();
         }
+    }
+
+    private onClickEnd(event: EventTouch) {
+        const currentFoodType = this.fishFoodManager.getCurrentActiveFishFood();
+        const touchPos = event.getUILocation();
+        if (!touchPos) {
+            console.warn('Could not convert to world space.');
+            return;
+        }
+
+        const spawnLocation = this.fishTank.getComponent(UITransform)!.convertToNodeSpaceAR(
+            new Vec3(touchPos.x, touchPos.y, 0));
+
+        this.fishTank.spawnFishFood(currentFoodType, spawnLocation, this.fishFoodManager);
+        console.log('Spawned default fish food for testing');
     }
 
     private cleanup() {
