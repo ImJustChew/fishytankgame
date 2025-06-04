@@ -45,20 +45,20 @@ export class FishTankManager extends Component {
         for (const fish of this.fishTank.getActiveFish()) {
             let closestFood: Node | null = null;
             let minDistance = Infinity;
-    
+
             const fishPos = fish.node.getPosition();
-    
+
             for (const food of this.fishTank.getActiveFishFood()) {
                 if (!food || !food.node || !food.node.isValid) continue;
                 const foodPos = food.node.getPosition();
                 const distance = Vec3.distance(fishPos, foodPos);
-    
+
                 if (distance < this.trackingRange && distance < minDistance) {
                     minDistance = distance;
                     closestFood = food.node;
                 }
             }
-    
+
             if (closestFood) {
                 fish.setTarget(closestFood.getPosition());
             } else {
@@ -86,7 +86,7 @@ export class FishTankManager extends Component {
 
         // Listen for mouse/touch clicks
         input.on(Input.EventType.TOUCH_END, this.onClickEnd, this);
-    }    
+    }
     /**
      * Set up real-time listener for fish data changes
      */
@@ -234,4 +234,6 @@ export class FishTankManager extends Component {
     onDestroy() {
         this.cleanup();
     }
+
+
 }
