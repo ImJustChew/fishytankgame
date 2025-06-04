@@ -2,7 +2,6 @@ import { _decorator, Component, Node } from 'cc';
 import { FishTank } from './FishTank';
 import databaseService, { SavedFishType } from './firebase/database-service';
 import authService from './firebase/auth-service';
-import { ShopMenu } from './shopMenu/ShopMenu';
 
 const { ccclass, property } = _decorator;
 
@@ -15,8 +14,6 @@ export class FishTankManager extends Component {
     @property
     autoLoadFish: boolean = true;
 
-    @property(Node)
-    shopMenuNode: Node | null = null;
 
     private unsubscribeFishData: (() => void) | null = null; start() {
         if (this.autoLoadFish) {
@@ -92,7 +89,7 @@ export class FishTankManager extends Component {
         const ownerId = user ? user.uid : 'unknown-user';
 
         // Create some default fish for testing
-        const defaultFishTypes = ['goldfish', 'clownfish', 'angelfish', 'guppy', 'tetra'];
+        const defaultFishTypes = ['Ruby Brem', 'Abyssal Pike', 'Nimlet', 'Azure Snapper', 'Shiny Jack'];
         const defaultFish: SavedFishType[] = defaultFishTypes.map((type, index) => ({
             ownerId: ownerId,
             type: type,
@@ -144,21 +141,5 @@ export class FishTankManager extends Component {
         this.cleanup();
     }
 
-    public openShopMenu() {
-        if (this.shopMenuNode) {
-            const shopMenu = this.shopMenuNode.getComponent(ShopMenu);
-            if (shopMenu) {
-                shopMenu.show();
-            }
-        }
-    }
 
-    public closeShopMenu() {
-        if (this.shopMenuNode) {
-            const shopMenu = this.shopMenuNode.getComponent(ShopMenu);
-            if (shopMenu) {
-                shopMenu.hide();
-            }
-        }
-    }
 }

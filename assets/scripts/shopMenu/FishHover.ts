@@ -14,6 +14,9 @@ export class FishHover extends Component {
     }
 
     onHoverEnter(event: EventMouse) {
+        // Stop event propagation to prevent accidental triggering of other events
+        event.propagationStopped = true;
+        
         // 放大到 1.2 倍
         tween(this.node)
             .to(0.1, { scale: this.originalScale.clone().multiplyScalar(1.2) })
@@ -21,6 +24,9 @@ export class FishHover extends Component {
     }
 
     onHoverExit(event: EventMouse) {
+        // Stop event propagation to prevent accidental triggering of other events
+        event.propagationStopped = true;
+        
         // 還原大小
         tween(this.node)
             .to(0.1, { scale: this.originalScale })
