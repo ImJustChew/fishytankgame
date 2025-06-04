@@ -165,8 +165,12 @@ export class FriendListPanel extends Component {
      */
     private clearFriendItems() {
         this.friendItems.forEach(item => {
-            if (item.node && item.node.isValid) {
-                item.node.destroy();
+            if (item && item.node && item.node.isValid) {
+                try {
+                    item.node.destroy();
+                } catch (error) {
+                    console.warn('Error destroying friend item node:', error);
+                }
             }
         });
         this.friendItems = [];
@@ -328,13 +332,13 @@ export class FriendListPanel extends Component {
 }
 
     onDestroy() {
-        if (this.closeButton) {
+        if (this.closeButton && this.closeButton.node && this.closeButton.node.isValid) {
             this.closeButton.node.off(Button.EventType.CLICK, this.onCloseClicked, this);
         }
-        if (this.removeFriendButton) {
+        if (this.removeFriendButton && this.removeFriendButton.node && this.removeFriendButton.node.isValid) {
             this.removeFriendButton.node.off(Button.EventType.CLICK, this.toggleRemoveMode, this);
         }
-        if (this.sendRequestButton) {
+        if (this.sendRequestButton && this.sendRequestButton.node && this.sendRequestButton.node.isValid) {
             this.sendRequestButton.node.off(Button.EventType.CLICK, this.onSendRequest, this);
         }
         this.clearFriendItems();

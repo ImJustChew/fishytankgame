@@ -165,10 +165,10 @@ export class FriendItem extends Component {
     }
 
     onDestroy() {
-        if (this.visitButton) {
+        if (this.visitButton && this.visitButton.node && this.visitButton.node.isValid) {
             this.visitButton.node.off(Button.EventType.CLICK, this.onVisitClicked, this);
         }
-        if (this.removeButton) {
+        if (this.removeButton && this.removeButton.node && this.removeButton.node.isValid) {
             this.removeButton.node.off(Button.EventType.CLICK, this.onRemoveClicked, this);
         }
     }
