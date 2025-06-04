@@ -215,6 +215,45 @@ class SocialService {
         }
     }
 
+    async getPendingFriendsList(): Promise<FriendData[] | null> {
+        const currentUser = authService.getCurrentUser();
+        if (!currentUser) {
+            console.warn('Cannot get pending friends list: No user is signed in');
+            return null;
+        }
+        try {
+            const snapshot = await database.ref(`users/${currentUser.uid}/pendingFriends`).once('value');
+            const pendingFriends = snapshot.val();
+
+            if (!pendingFriends) return [];
+
+            const requestUids = Object.keys(pendingFriends);
+            const pendingRequests: FriendData[] = [];
+
+            // Get user data for each pending friend
+            for (const uid of requestUids) {
+                const userSnapshot = await database.ref(`users/${uid}`).once('value');
+                const userData = userSnapshot.val();
+                if (userData) {
+                    pendingRequests.push({
+                        uid,
+                        username: userData.username,
+                        email: userData.email,
+                        money: userData.money,
+                        lastOnline: userData.lastOnline
+                    });
+                }
+            }
+
+            console.log(`Retrieved ${pendingRequests.length} pending friend requests`);
+            return pendingRequests;
+
+        } catch (error) {
+            console.error('Error getting pending friends list:', error);
+            return null;
+        }
+    }
+
     /**
      * Get a friend's fish collection
      */
@@ -385,6 +424,7 @@ class SocialService {
 
     /**
      * Remove a friend from the current user's friends list
+     * Also remove pending friend requests if they exist
      */
     async removeFriend(friendUid: string): Promise<{ success: boolean; message: string }> {
         const currentUser = authService.getCurrentUser();
@@ -396,6 +436,7 @@ class SocialService {
             const updates: { [key: string]: any } = {};
             updates[`users/${currentUser.uid}/friends/${friendUid}`] = null;
             updates[`users/${friendUid}/friends/${currentUser.uid}`] = null;
+            updates[`users/${currentUser.uid}/friends/${friendUid}`] = null;
 
             await database.ref().update(updates);
 

@@ -1,11 +1,11 @@
 // Assets/Scripts/shop/ShopManager.ts
-import { _decorator, Component, Prefab, instantiate, ScrollView, Label, Node } from 'cc';
-import { FishItem }        from './FishItem';
+import { _decorator, Component, Prefab, instantiate, ScrollView, Label, Node, UITransform, Color } from 'cc';
+import { FishItem } from './FishItem';
 import { FISH_LIST, Fish } from '../FishData';
-import { FishManager }      from '../FishManager';
+import { FishManager } from '../FishManager';
 
 // 下面两行假设你已经在 Assets/Scripts/shop/ 目录里
-import { purchaseFish }     from './purchaseFish';
+import { purchaseFish } from './purchaseFish';
 import databaseService, { UserData } from '../firebase/database-service';
 
 const { ccclass, property } = _decorator;
@@ -24,11 +24,22 @@ export class ShopManager extends Component {
   @property
   public defaultMoney = 100;
 
+  @property(Label)
+  public warningLabel: Label = null!;
+
+  @property
+  public warningDuration = 3; // 警告显示时间（秒）
+
   private money = 0;
 
   async start() {
     await this.fetchOrInitMoney();
     this.populateFishList();
+
+    // 初始化警告标签
+    if (this.warningLabel) {
+      this.warningLabel.node.active = false;
+    }
   }
 
   private async fetchOrInitMoney() {
@@ -80,48 +91,73 @@ export class ShopManager extends Component {
     console.log('onFishBought event:', event);
     console.log('Event target:', event.target);
     console.log('Event type:', event.type);
-    
+
     // Check if event itself has id and price properties
-    const detail = (event && event.detail) ? 
-      event.detail as { id: string; price: number } : 
-      (event && event.id && event.price) ? 
-        { id: event.id, price: event.price } : 
+    const detail = (event && event.detail) ?
+      event.detail as { id: string; price: number } :
+      (event && event.id && event.price) ?
+        { id: event.id, price: event.price } :
         undefined;
-        
+
     if (!detail) {
-        // 说明这个回调被意外地触发了一个没有 detail 的事件
-        console.warn('onFishBought: 收到一个没有 detail 的事件，直接忽略');
-        return;
+      // Event triggered without proper detail
+      console.warn('onFishBought: Received event without detail, ignoring');
+      return;
     }
     const { id: typeId, price } = detail;
     if (this.money < price) {
-      console.log(`钱不够，买不了 ${typeId}`);
+      console.log(`Not enough money to buy ${typeId}`);
+      this.showWarning(`Insufficient funds! Need $${price}, current balance: $${this.money}`);
       return;
     }
 
     try {
       await purchaseFish(typeId);
       this.money -= price;
-      console.log(`已购买鱼 ${typeId}，剩余 $${this.money}`);
+      console.log(`Fish purchased: ${typeId}, remaining balance: $${this.money}`);
 
       const fishNode = event.target as Node;
       const fishButtonLabel = fishNode.getComponentInChildren(Label);
       if (fishButtonLabel) {
-        fishButtonLabel.string = '已购买';
+        fishButtonLabel.string = 'Purchased';
       }
       const buyBtnComp = fishNode.getComponent(FishItem)?.getBuyButton();
       if (buyBtnComp) {
         buyBtnComp.interactable = false;
       }
     } catch (err: any) {
-      console.error(`购买失败: ${err.message}`);
+      console.error(`Purchase failed: ${err.message}`);
       if (err.message === 'INSUFFICIENT_FUNDS') {
-        console.warn('购买失败：金钱不足');
+        this.showWarning('Purchase failed: Insufficient funds');
       } else if (err.message === 'USER_NOT_LOGGED_IN') {
-        console.warn('购买失败：用户未登录');
+        this.showWarning('Purchase failed: User not logged in');
       } else {
-        console.error('购买时发生其他错误：', err);
+        this.showWarning(`Purchase failed: ${err.message}`);
       }
     }
+  }
+
+  /**
+   * 显示警告信息
+   * @param message 警告信息
+   */
+  private showWarning(message: string) {
+    if (!this.warningLabel) return;
+
+    // 设置警告文本
+    this.warningLabel.string = message;
+
+    // 设置警告颜色（红色）
+    this.warningLabel.color = new Color(255, 100, 100, 255);
+
+    // 显示警告
+    this.warningLabel.node.active = true;
+
+    // 设置定时器，几秒后自动隐藏
+    this.scheduleOnce(() => {
+      if (this.warningLabel) {
+        this.warningLabel.node.active = false;
+      }
+    }, this.warningDuration);
   }
 }
