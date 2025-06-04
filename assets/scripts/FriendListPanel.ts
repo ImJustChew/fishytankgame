@@ -1,6 +1,7 @@
 import { _decorator, Component, Node, Prefab, instantiate, ScrollView, Button, director } from 'cc';
 import socialService, { FriendData, StealAttempt } from './firebase/social-service';
 import { FriendItem } from './FriendItem';
+import { UITransform } from 'cc';
 
 const { ccclass, property } = _decorator;
 
@@ -19,6 +20,9 @@ export class FriendListPanel extends Component {
     @property(Button)
     closeButton: Button = null;
 
+    @property(Button)
+    removeFriendButton: Button = null;
+
     private friendItems: FriendItem[] = [];
     private stealHistory: { incoming: StealAttempt[]; outgoing: StealAttempt[] } = { incoming: [], outgoing: [] };
 
@@ -33,6 +37,9 @@ export class FriendListPanel extends Component {
 
     start() {
         this.loadFriendsList();
+        this.generateTestFriendItems(); // two testing item
+        this.generateTestFriendItems(); // two testing item
+        this.adjustContentHeight();
     }
 
 
@@ -93,6 +100,11 @@ export class FriendListPanel extends Component {
      * check if a friend has stolen from the player
      */
     private checkIfFriendHasStolen(friendUid: string): boolean {
+        // if prefix of uid is 'test', return false
+        if (friendUid.startsWith('test')) {
+            // randomly return true or false
+            return Math.random() < 0.5;
+        }
         return this.stealHistory.incoming.some(attempt => 
             attempt.thiefUid === friendUid && attempt.success
         );
@@ -141,6 +153,46 @@ export class FriendListPanel extends Component {
             this.show();
         } else {
             this.hide();
+        }
+    }
+
+    /**
+     * 測試用：生成兩個 FriendItem 加到 contentNode
+     */
+    private generateTestFriendItems() {
+        const testFriends: FriendData[] = [
+            {
+                uid: 'test1',
+                username: 'Alice',
+                email: 'alice@example.com',
+                money: 100,
+                lastOnline: Date.now() - 1000 * 60 * 5
+            },
+            {
+                uid: 'test2',
+                username: 'Bob',
+                email: 'bob@example.com',
+                money: 200,
+                lastOnline: Date.now() - 1000 * 60 * 60,
+            }
+        ];
+
+        testFriends.forEach(friend => {
+            this.createFriendItem(friend);
+        });
+    }
+
+    /**
+     * Adjust the content height based on the number of friend items
+     */
+    private adjustContentHeight() {
+        if (this.contentNode && this.friendItems.length > 0) {
+            const itemHeight = this.friendItemPrefab.data.height || 50; // default height if not set
+            const totalHeight = (itemHeight + 20) * this.friendItems.length;
+            const uiTrans = this.contentNode.getComponent(UITransform);
+            if (uiTrans) {
+                uiTrans.height = totalHeight + 10;
+            }
         }
     }
 

@@ -1041,7 +1041,7 @@
       "__expectedType__": "cc.SpriteFrame"
     },
     "_pressedSprite": {
-      "__uuid__": "20835ba4-6145-4fbc-a58a-051ce700aa3e@f9941",
+      "__uuid__": "951249e0-9f16-456d-8b85-a6ca954da16b@f9941",
       "__expectedType__": "cc.SpriteFrame"
     },
     "_disabledSprite": {
@@ -1139,6 +1139,7 @@
       "__id__": 0
     },
     "fileId": "85zgvCcRFO+JwYZhpub00Z",
+    "instance": null,
     "targetOverrides": null
   }
 ]
