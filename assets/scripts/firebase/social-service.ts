@@ -7,6 +7,7 @@ export type FriendData = {
     username: string;
     email: string;
     money: number;
+    lastOnline: number;
 }
 
 export type StealAttempt = {
@@ -95,7 +96,8 @@ class SocialService {
                         uid,
                         username: userData.username,
                         email: userData.email,
-                        money: userData.money
+                        money: userData.money,
+                        lastOnline: userData.lastOnline
                     });
                 }
             }
@@ -198,7 +200,8 @@ class SocialService {
                         uid,
                         username: friendData.username,
                         email: friendData.email,
-                        money: friendData.money
+                        money: friendData.money,
+                        lastOnline: friendData.lastOnline
                     });
                 }
             }
@@ -510,7 +513,8 @@ class SocialService {
                                 uid,
                                 username: userData.username,
                                 email: userData.email,
-                                money: userData.money
+                                money: userData.money,
+                                lastOnline: userData.lastOnline
                             });
                         }
                     } catch (error) {
