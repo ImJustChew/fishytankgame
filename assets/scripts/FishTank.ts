@@ -1,14 +1,12 @@
-import { _decorator, Component, Node, Prefab, instantiate, Vec3, UITransform } from 'cc';
+import { _decorator, Component, Node, Prefab, instantiate, Vec3, UITransform, Sprite, SpriteFrame } from 'cc';
 import { SavedFishType } from './firebase/database-service';
 import { Fish } from './Fish';
+import { FishManager } from './FishManager';
 
 const { ccclass, property } = _decorator;
 
 @ccclass('FishTank')
 export class FishTank extends Component {
-
-    @property(Prefab)
-    fishPrefab: Prefab | null = null;
 
     @property
     maxFishCount: number = 10;
@@ -18,7 +16,9 @@ export class FishTank extends Component {
 
     start() {
         this.calculateTankBounds();
-    } private calculateTankBounds() {
+    }
+
+    private calculateTankBounds() {
         // Use the node this component is attached to as the tank boundary
         const transform = this.getComponent(UITransform);
         let width = 0;
@@ -43,7 +43,9 @@ export class FishTank extends Component {
             min: new Vec3(-halfWidth, -halfHeight, 0),
             max: new Vec3(halfWidth, halfHeight, 0)
         };
-    } public spawnFishFromData(fishDataArray: SavedFishType[]) {
+    }
+
+    public spawnFishFromData(fishDataArray: SavedFishType[], fishManager: FishManager) {
         // Recalculate tank bounds to ensure they're up to date
         this.calculateTankBounds();
 
@@ -51,32 +53,41 @@ export class FishTank extends Component {
         this.clearAllFish();
 
         // Limit the number of fish to spawn
-        const fishToSpawn = fishDataArray.slice(0, this.maxFishCount); fishToSpawn.forEach((fishData, index) => {
-            this.spawnFish(fishData);
+        const fishToSpawn = fishDataArray.slice(0, this.maxFishCount);
+
+        fishToSpawn.forEach((fishData, index) => {
+            this.spawnFish(fishData, fishManager);
         });
     }
 
-    public spawnFish(fishData: SavedFishType): Fish | null {
-        if (!this.fishPrefab) {
-            console.error('Fish prefab not set in FishTank component');
-            return null;
-        }
-
+    public spawnFish(fishData: SavedFishType, fishManager: FishManager): Fish | null {
         if (this.activeFish.length >= this.maxFishCount) {
             console.warn('Maximum fish count reached, cannot spawn more fish');
             return null;
         }
 
-        // Instantiate fish prefab
-        const fishNode = instantiate(this.fishPrefab);
+        // Get sprite frame for the fish type
+        const spriteFrame = fishManager.getFishSpriteById(fishData.type);
+        if (!spriteFrame) {
+            console.warn(`No sprite found for fish type: ${fishData.type}, spawning without sprite`);
+        }
+
+        // Create a new node for the fish
+        const fishNode = new Node(`Fish_${fishData.type}`);
         this.node.addChild(fishNode);
 
-        // Get the Fish component
-        const fishComponent = fishNode.getComponent(Fish);
+        // Add Fish component
+        const fishComponent = fishNode.addComponent(Fish);
         if (!fishComponent) {
-            console.error('Fish prefab must have a Fish component');
+            console.error('Failed to add Fish component');
             fishNode.destroy();
             return null;
+        }
+
+        // Add Sprite component and set sprite frame
+        const spriteComponent = fishNode.addComponent(Sprite);
+        if (spriteComponent && spriteFrame) {
+            spriteComponent.spriteFrame = spriteFrame;
         }
 
         // Initialize the fish with data and bounds
@@ -141,16 +152,16 @@ export class FishTank extends Component {
         });
     }
 
-    public addRandomFish() {
+    public addRandomFish(fishManager: FishManager) {
         // Create a sample fish data for testing
         const randomFishData: SavedFishType = {
             ownerId: 'current-user',
-            type: `fish-${Math.floor(Math.random() * 5) + 1}`,
+            type: `fish_${Math.floor(Math.random() * 3) + 1}`, // fish_1, fish_2, or fish_3 to match FishData IDs
             health: 100,
             lastFedTime: Date.now()
         };
 
-        this.spawnFish(randomFishData);
+        this.spawnFish(randomFishData, fishManager);
     }
 
     onDestroy() {

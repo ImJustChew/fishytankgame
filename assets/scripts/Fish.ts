@@ -11,8 +11,7 @@ export class Fish extends Component {
     @property
     changeDirectionInterval: number = 3; // Increased from 2 to 3 seconds for longer swimming segments
 
-    @property
-    flipSpriteHorizontally: boolean = false; // Option to flip sprite orientation if needed
+    flipSpriteHorizontally: boolean = false;
 
     private fishData: SavedFishType | null = null;
     private tankBounds: { min: Vec3, max: Vec3 } | null = null;
@@ -26,7 +25,9 @@ export class Fish extends Component {
         // Get the sprite component from the same node
         this.sprite = this.getComponent(Sprite);
         this.initializeMovement();
-    } update(deltaTime: number) {
+    }
+
+    update(deltaTime: number) {
         this.directionTimer += deltaTime;
 
         // Add random variation to direction change interval (±50% of base interval)
