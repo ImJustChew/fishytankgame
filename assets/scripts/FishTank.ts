@@ -19,9 +19,8 @@ export class FishTank extends Component {
     maxFishFoodCount: number = 20;
 
     private activeFish: Fish[] = [];
+    private activeFishFood: FishFood[] = []
     private tankBounds: { min: Vec3, max: Vec3 } = { min: new Vec3(), max: new Vec3() };
-
-    private activeFishFoodCount = 0;
 
     private currentActiveFishFood: FishFoodType | null = null;
     
@@ -140,7 +139,7 @@ export class FishTank extends Component {
             return null;
         }
         // make condition when food in aquarium has already reached a certain amount to avoid lag
-        if (this.activeFishFoodCount >= this.maxFishFoodCount) {
+        if (this.activeFishFood.length >= this.maxFishFoodCount) {
             console.warn('Maximum fish food count reached, cannot spawn more food');
             return null;
         }
@@ -169,16 +168,18 @@ export class FishTank extends Component {
             spriteComponent.spriteFrame = spriteFrame;
         }
 
-        // Initialize the fish with data and bounds
+        // Initialize the fish food with data and bounds
         fishFoodComponent.initializeFishFood(fishFoodType, spawnLocation, this.tankBounds);
 
-        // Add to active fish array
-        // this.activeFishFood.push(fishFoodComponent);
-        this.activeFishFoodCount += 1;
+        // Add to active fish food array
+        this.activeFishFood.push(fishFoodComponent);
 
-        // Set up cleanup when fish is destroyed
+        // Set up cleanup when fish food is destroyed
         fishFoodNode.on(Node.EventType.NODE_DESTROYED, () => {
-            this.activeFishFoodCount -= 1;
+            const index = this.activeFishFood.indexOf(fishFoodComponent);
+            if (index > -1) {
+                this.activeFishFood.splice(index, 1);
+            }
         });
 
         return fishFoodComponent;
@@ -206,12 +207,16 @@ export class FishTank extends Component {
         return [...this.activeFish];
     }
 
+    public getActiveFishFood(): FishFood[] {
+        return [...this.activeFishFood]
+    }
+
     public getFishCount(): number {
         return this.activeFish.length;
     }
 
     public getFishFoodCount(): number {
-        return this.activeFishFoodCount;
+        return this.activeFishFood.length;
     }
     /**
      * Get Current active food list 

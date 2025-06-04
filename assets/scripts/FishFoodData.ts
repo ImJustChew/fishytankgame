@@ -9,6 +9,7 @@ export interface FishFoodType {
     name: string;         // Display name
     description: string;  // Description of the food
     fallSpeed: number;    // Fall speed in units per second
+    health: number;
 }
 
 /**
@@ -21,18 +22,21 @@ export const FISH_FOOD_LIST: FishFoodType[] = [
         name: "Basic Pellets",
         description: "Standard food pellets suitable for most fish.",
         fallSpeed: 30,
+        health: 10
     },
     {
         id: "food_002",
         name: "Sinking Granules",
         description: "Slow-sinking granules ideal for bottom feeders.",
         fallSpeed: 20,
+        health: 20
     },
     {
         id: "food_003",
         name: "Floating Flakes",
         description: "Lightweight flakes that stay at the surface longer.",
         fallSpeed: 10,
+        health: 10
     },
     // Add more food types as needed
 ];

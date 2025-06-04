@@ -59,7 +59,7 @@ export class FishFood extends Component {
             .start();
     }
 
-    private destroyFood() {
+    public destroyFood() {
         this.node.destroy(); // Destroys the node when it hits the bottom
     }
 

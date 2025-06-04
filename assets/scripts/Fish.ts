@@ -1,5 +1,6 @@
 import { _decorator, Component, Node, Vec3, Sprite, math, tween, Tween } from 'cc';
 import { SavedFishType } from './firebase/database-service';
+import { FISH_FOOD_LIST, FishFoodType } from './FishFoodData';
 
 const { ccclass, property } = _decorator;
 
@@ -7,6 +8,9 @@ const { ccclass, property } = _decorator;
 export class Fish extends Component {
     @property
     moveSpeed: number = 50;
+
+    @property
+    maxHealth: number = 120;
 
     @property
     changeDirectionInterval: number = 3; // Increased from 2 to 3 seconds for longer swimming segments
@@ -21,6 +25,9 @@ export class Fish extends Component {
 
     private sprite: Sprite | null = null;
 
+    // fish target which food to nyammyyy yummy
+    private targetPos: Vec3 | null = null;
+
     start() {
         // Get the sprite component from the same node
         this.sprite = this.getComponent(Sprite);
@@ -28,6 +35,27 @@ export class Fish extends Component {
     }
 
     update(deltaTime: number) {
+        if (this.targetPos) {
+            const currentPos = this.node.getPosition();
+            const direction = new Vec3();
+            Vec3.subtract(direction, this.targetPos, currentPos);
+
+            if (this.sprite) {
+                const shouldFlip = this.flipSpriteHorizontally
+                    ? direction.x > 0 // flip if target is to the right
+                    : direction.x < 0; // flip if target is to the left
+                this.node.setScale(shouldFlip ? -1 : 1, 1, 1);
+            }
+
+            if (direction.length() > 1) {
+                direction.normalize();
+                // fish hungry so move quiickkkkk sonic
+                // TODO: maybe decay move speed? lol
+                const movement = direction.multiplyScalar(this.moveSpeed * 3 * deltaTime);
+                this.node.setPosition(currentPos.add(movement));
+            }
+        }
+
         this.directionTimer += deltaTime;
 
         // Add random variation to direction change interval (±50% of base interval)
@@ -35,10 +63,11 @@ export class Fish extends Component {
         const randomInterval = this.changeDirectionInterval + (Math.random() - 0.5) * 2 * variation;
 
         // Change direction randomly or when hitting bounds
-        if (this.directionTimer >= randomInterval || this.isHittingBounds()) {
+        if (!this.targetPos && (this.directionTimer >= randomInterval || this.isHittingBounds())) {
             this.changeDirection();
             this.directionTimer = 0;
         }
+        
     }
 
     public initializeFish(fishData: SavedFishType, tankBounds: { min: Vec3, max: Vec3 }) {
@@ -163,6 +192,14 @@ export class Fish extends Component {
             .start();
     }
 
+    public eatFood(foodType: FishFoodType | null) {
+        if (!foodType) return;
+
+        // Update hunger or health or whatever logic you want
+        this.updateHealth(foodType.health);
+        this.updateLastFedTime(Date.now()) // get delta time
+    }
+
     private isHittingBounds(): boolean {
         if (!this.tankBounds) return false;
 
@@ -188,8 +225,11 @@ export class Fish extends Component {
     }
 
     public updateHealth(health: number) {
+        if (this.fishData.health >= this.maxHealth) {
+            this.node.destroy();
+        }
         if (this.fishData) {
-            this.fishData.health = health;
+            this.fishData.health = this.fishData.health + health;
         }
     }
 
@@ -197,6 +237,14 @@ export class Fish extends Component {
         if (this.fishData) {
             this.fishData.lastFedTime = time;
         }
+    }
+
+    setTarget(pos: Vec3) {
+        this.targetPos = pos;
+    }
+
+    clearTarget() {
+        this.targetPos = null;
     }
 
     onDestroy() {

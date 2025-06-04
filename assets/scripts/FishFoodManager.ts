@@ -16,14 +16,11 @@ export class FishFoodManager extends Component {
         tooltip: 'List of food sprite frames to be managed'
     })
     private spriteFrames: SpriteFrame[] = [];
-
-    private currentActiveFishFood: FishFoodType | null = null;
     // Internal map for quick lookups
     private spriteMap: Map<string, SpriteFrame> = new Map();
 
     start() {
         this.initializeSpriteMap();
-
     }
 
     /**
