@@ -73,6 +73,7 @@ export class FriendListPanel extends Component {
 
 
     async loadFriendsList() {
+        this.clearFriendItems(); // refresh the whole list
         // 1. load pending friend requests
         try {
             const pendingFriends = await socialService.getPendingFriendsList();
@@ -102,7 +103,6 @@ export class FriendListPanel extends Component {
             }
 
             friends.sort((a, b) => a.username.localeCompare(b.username));
-            this.clearFriendItems(); // clear existing items
             for (const friend of friends) { // create new items
                 this.createFriendItem(friend, false);
             }
