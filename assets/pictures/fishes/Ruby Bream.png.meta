@@ -2,7 +2,7 @@
   "ver": "1.0.27",
   "importer": "image",
   "imported": true,
-  "uuid": "a4b42a64-cb83-425b-97ab-3692e52e8293",
+  "uuid": "f7f78e76-04e1-41bc-b382-9e09d4a2ac2d",
   "files": [
     ".json",
     ".png"
@@ -10,14 +10,14 @@
   "subMetas": {
     "6c48a": {
       "importer": "texture",
-      "uuid": "a4b42a64-cb83-425b-97ab-3692e52e8293@6c48a",
-      "displayName": "DEEP OCEAN FISH(SMALL)",
+      "uuid": "f7f78e76-04e1-41bc-b382-9e09d4a2ac2d@6c48a",
+      "displayName": "Ruby Bream",
       "id": "6c48a",
       "name": "texture",
       "userData": {
         "wrapModeS": "clamp-to-edge",
         "wrapModeT": "clamp-to-edge",
-        "imageUuidOrDatabaseUri": "a4b42a64-cb83-425b-97ab-3692e52e8293",
+        "imageUuidOrDatabaseUri": "f7f78e76-04e1-41bc-b382-9e09d4a2ac2d",
         "isUuid": true,
         "visible": false,
         "minfilter": "nearest",
@@ -34,21 +34,21 @@
     },
     "f9941": {
       "importer": "sprite-frame",
-      "uuid": "a4b42a64-cb83-425b-97ab-3692e52e8293@f9941",
-      "displayName": "DEEP OCEAN FISH(SMALL)",
+      "uuid": "f7f78e76-04e1-41bc-b382-9e09d4a2ac2d@f9941",
+      "displayName": "Ruby Bream",
       "id": "f9941",
       "name": "spriteFrame",
       "userData": {
         "trimThreshold": 1,
         "rotated": false,
-        "offsetX": -0.5,
-        "offsetY": 0.5,
+        "offsetX": -8,
+        "offsetY": 8,
         "trimX": 0,
         "trimY": 0,
-        "width": 31,
-        "height": 17,
-        "rawWidth": 32,
-        "rawHeight": 18,
+        "width": 496,
+        "height": 272,
+        "rawWidth": 512,
+        "rawHeight": 288,
         "borderTop": 0,
         "borderBottom": 0,
         "borderLeft": 0,
@@ -60,17 +60,17 @@
         "meshType": 0,
         "vertices": {
           "rawPosition": [
-            -15.5,
-            -8.5,
+            -248,
+            -136,
             0,
-            15.5,
-            -8.5,
+            248,
+            -136,
             0,
-            -15.5,
-            8.5,
+            -248,
+            136,
             0,
-            15.5,
-            8.5,
+            248,
+            136,
             0
           ],
           "indexes": [
@@ -83,13 +83,13 @@
           ],
           "uv": [
             0,
-            18,
-            31,
-            18,
+            288,
+            496,
+            288,
             0,
-            1,
-            31,
-            1
+            16,
+            496,
+            16
           ],
           "nuv": [
             0,
@@ -102,18 +102,18 @@
             1
           ],
           "minPos": [
-            -15.5,
-            -8.5,
+            -248,
+            -136,
             0
           ],
           "maxPos": [
-            15.5,
-            8.5,
+            248,
+            136,
             0
           ]
         },
         "isUuid": true,
-        "imageUuidOrDatabaseUri": "a4b42a64-cb83-425b-97ab-3692e52e8293@6c48a",
+        "imageUuidOrDatabaseUri": "f7f78e76-04e1-41bc-b382-9e09d4a2ac2d@6c48a",
         "atlasUuid": "",
         "trimType": "auto"
       },
@@ -129,6 +129,6 @@
     "type": "sprite-frame",
     "hasAlpha": true,
     "fixAlphaTransparencyArtifacts": false,
-    "redirect": "a4b42a64-cb83-425b-97ab-3692e52e8293@6c48a"
+    "redirect": "f7f78e76-04e1-41bc-b382-9e09d4a2ac2d@6c48a"
   }
 }

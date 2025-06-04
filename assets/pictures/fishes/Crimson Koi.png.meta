@@ -11,7 +11,7 @@
     "6c48a": {
       "importer": "texture",
       "uuid": "bcabd140-b2e7-482a-abc3-352cd7108f4e@6c48a",
-      "displayName": "fish1Texture",
+      "displayName": "Crimson Koi",
       "id": "6c48a",
       "name": "texture",
       "userData": {
@@ -35,7 +35,7 @@
     "f9941": {
       "importer": "sprite-frame",
       "uuid": "bcabd140-b2e7-482a-abc3-352cd7108f4e@f9941",
-      "displayName": "fish1Texture",
+      "displayName": "Crimson Koi",
       "id": "f9941",
       "name": "spriteFrame",
       "userData": {

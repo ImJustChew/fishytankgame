@@ -19,6 +19,7 @@ export class FishTankManager extends Component {
     @property
     autoLoadFish: boolean = true;
 
+
     private unsubscribeFishData: (() => void) | null = null; start() {
         if (this.autoLoadFish) {
             this.setupFishDataListener();
@@ -159,4 +160,6 @@ export class FishTankManager extends Component {
     onDestroy() {
         this.cleanup();
     }
+
+
 }

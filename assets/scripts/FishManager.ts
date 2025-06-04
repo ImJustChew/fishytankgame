@@ -29,7 +29,7 @@ export class FishManager extends Component {
     /**
      * Initialize the internal map for fast lookups
      */
-    private initializeSpriteMap() {
+    public initializeSpriteMap() {
         this.spriteMap.clear();
         const spriteKeys: string[] = FISH_LIST.map(fish => fish.id);
 
@@ -71,4 +71,5 @@ export class FishManager extends Component {
             sprite: this.getFishSpriteById(fish.id) || null
         }))];
     }
+    
 }
