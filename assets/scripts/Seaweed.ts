@@ -60,7 +60,6 @@ export class Seaweed extends Component {
     }
 
     update(dt: number) {
-        console.log(this.disturbanceIntensity);
         // Segment0 is fixed at the root position
         const rootPos = this.segments[0].getPosition();
         this.segments[0].setPosition(rootPos); 
