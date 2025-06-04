@@ -1,4 +1,4 @@
-import { _decorator, Component, Node, Label, Button, Color } from 'cc';
+import { _decorator, Component, Node, Label, Button, Color, Sprite } from 'cc';
 import { FriendData, StealAttempt } from './firebase/social-service';
 
 const { ccclass, property } = _decorator;
@@ -15,6 +15,9 @@ export class FriendItem extends Component {
     @property(Label)
     statusLabel: Label = null;
 
+    @property(Label)
+    moneyLabel: Label = null;
+
     @property(Button)
     visitButton: Button = null;
 
@@ -23,6 +26,8 @@ export class FriendItem extends Component {
 
     private friendData: FriendData = null;
     private onRemoveCallback: (friendUid: string) => void = null;
+    private onAcceptCallback: (friendUid: string) => void = null;
+    private isFriendPending: boolean = false;
 
     onLoad() {
         if (this.visitButton) {
@@ -39,10 +44,14 @@ export class FriendItem extends Component {
     setupFriendItem(
         friendData: FriendData,
         hasStolen: boolean,
-        onRemoveCallback?: (friendUid: string) => void
+        onRemoveCallback?: (friendUid: string) => void,
+        onAcceptCallback?: (friendUid: string) => void,
+        isPending: boolean = false
     ) {
         this.friendData = friendData;
+        this.isFriendPending = isPending;
         this.onRemoveCallback = onRemoveCallback || null;
+        this.onAcceptCallback = onAcceptCallback || null;
 
         if (this.usernameLabel) {
             this.usernameLabel.string = friendData.username;
@@ -52,6 +61,21 @@ export class FriendItem extends Component {
         }
         if (this.statusLabel) {
             this.setupFriendStatus(hasStolen);
+        }
+        if (this.moneyLabel) {
+            this.moneyLabel.string = `$${('000000' + friendData.money).slice(-6)}`;
+        }
+        if (this.isFriendPending && this.visitButton) {
+            const labelNode = this.visitButton.node.children[0];
+            if (labelNode) {
+                const label = labelNode.getComponent(Label);
+                if (label) {
+                    label.string = 'ACCEPT';
+                    label.fontSize = 23;
+                }
+            }
+            const sprite = this.visitButton.node.getComponent(Sprite);
+            sprite.color = new Color(100, 255, 100, 255); // green
         }
     }
 
@@ -87,17 +111,31 @@ export class FriendItem extends Component {
 
 
     private setupFriendStatus(hasStolen: boolean) {
-        if (hasStolen) {
+        if (this.isFriendPending) {
+            this.statusLabel.string = 'a new friend request';
+            this.statusLabel.color = new Color(100, 255, 100, 255); // green
+        } else if (hasStolen) {
             this.statusLabel.string = 'this devil stole your fish!!!!';
             this.statusLabel.color = new Color(255, 100, 100, 255); // red
         } else {
             this.statusLabel.string = 'just a friendly guy :)';
-            this.statusLabel.color = new Color(100, 255, 100, 255); // green
         }
     }
 
-
+  
+    /**
+     * handle the visit button click event
+     * also, if the friend is in pending state, the visit button will be changed to "accept" button
+     * and the button color will be changed to green
+     */
     private onVisitClicked() {
+        if (this.isFriendPending) {
+            console.log('Accepting friend request:', this.friendData.uid);
+            if(this.onAcceptCallback && this.friendData) {
+                this.onAcceptCallback(this.friendData.uid);
+            }
+            return; // do not call the visit callback if it's a pending friend request
+        }
         if (this.onVisitCallback && this.friendData) {
             this.onVisitCallback(this.friendData.uid);
         }
@@ -105,6 +143,7 @@ export class FriendItem extends Component {
 
     /**
      * TODO: implement the visit button click handler
+     * change to friend's tank scene
      */
     private onVisitCallback: (friendUid: string) => void = null; //  TODO
 
