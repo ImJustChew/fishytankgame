@@ -26,6 +26,8 @@ export class FriendListPanel extends Component {
     private friendItems: FriendItem[] = [];
     private stealHistory: { incoming: StealAttempt[]; outgoing: StealAttempt[] } = { incoming: [], outgoing: [] };
 
+    private removeMode: boolean = false; // whether remove button is enabled
+
     onLoad() {
         if (this.closeButton) {
             this.closeButton.node.on(Button.EventType.CLICK, this.onCloseClicked, this);
@@ -33,12 +35,15 @@ export class FriendListPanel extends Component {
         if (!this.contentNode && this.scrollView) {
             this.contentNode = this.scrollView.content;
         }
+        if (this.removeFriendButton) {
+            this.removeFriendButton.node.on(Button.EventType.CLICK, this.toggleRemoveMode, this);
+        }
     }
 
     start() {
         this.loadFriendsList();
-        this.generateTestFriendItems(); // two testing item
-        this.generateTestFriendItems(); // two testing item
+        this.generateTestFriendItems(); // two testing item, delete after testing
+        this.generateTestFriendItems(); // two testing item, delete after testing
         this.adjustContentHeight();
     }
 
@@ -89,8 +94,11 @@ export class FriendListPanel extends Component {
         const hasStolen = this.checkIfFriendHasStolen(friendData.uid);
         friendItem.setupFriendItem(
             friendData,
-            hasStolen
+            hasStolen,
+            this.onRemoveFriend.bind(this)
         );
+
+        friendItem.toggleRemoveButton(this.removeMode);
 
         this.contentNode.addChild(friendItemNode);
         this.friendItems.push(friendItem);
@@ -125,6 +133,9 @@ export class FriendListPanel extends Component {
 
 
     private onCloseClicked() {
+        if (this.removeMode) {
+            this.toggleRemoveMode();
+        }
         this.node.active = false;
         console.log('friends panel closed');
     }
@@ -155,6 +166,26 @@ export class FriendListPanel extends Component {
             this.hide();
         }
     }
+
+
+    private toggleRemoveMode() {
+        this.removeMode = !this.removeMode;
+        this.friendItems.forEach(item => {
+            item.toggleRemoveButton(this.removeMode);
+        });
+    }
+
+    // Haven't test this function yet
+    private async onRemoveFriend(friendUid: string) {
+        console.log(`Removing friend with UID: ${friendUid}`);
+        const result = await socialService.removeFriend(friendUid);
+        if (result.success) {
+            this.loadFriendsList(); // reload the friends list
+        } else {
+            console.warn(result.message);
+        }
+    }
+
 
     /**
      * 測試用：生成兩個 FriendItem 加到 contentNode
@@ -199,6 +230,9 @@ export class FriendListPanel extends Component {
     onDestroy() {
         if (this.closeButton) {
             this.closeButton.node.off(Button.EventType.CLICK, this.onCloseClicked, this);
+        }
+        if (this.removeFriendButton) {
+            this.removeFriendButton.node.off(Button.EventType.CLICK, this.toggleRemoveMode, this);
         }
         this.clearFriendItems();
     }

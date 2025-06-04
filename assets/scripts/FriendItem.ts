@@ -18,7 +18,11 @@ export class FriendItem extends Component {
     @property(Button)
     visitButton: Button = null;
 
+    @property(Button)
+    removeButton: Button = null; 
+
     private friendData: FriendData = null;
+    private onRemoveCallback: (friendUid: string) => void = null;
 
     onLoad() {
         if (this.visitButton) {
@@ -32,8 +36,10 @@ export class FriendItem extends Component {
     setupFriendItem(
         friendData: FriendData, 
         hasStolen: boolean,
+        onRemoveCallback?: (friendUid: string) => void
     ) {
         this.friendData = friendData;
+        this.onRemoveCallback = onRemoveCallback || null;
 
         if (this.usernameLabel) {
             this.usernameLabel.string = friendData.username;
@@ -79,7 +85,7 @@ export class FriendItem extends Component {
 
     private setupFriendStatus(hasStolen: boolean) {
         if (hasStolen) {
-            this.statusLabel.string = 'this devel stole your fish!!!!';
+            this.statusLabel.string = 'this devil stole your fish!!!!';
             this.statusLabel.color = new Color(255, 100, 100, 255); // red
         } else {
             this.statusLabel.string = 'just a friendly guy :)';
@@ -104,9 +110,25 @@ export class FriendItem extends Component {
         return this.friendData;
     }
 
+    toggleRemoveButton(show: boolean) {
+        if (this.removeButton) {
+            this.removeButton.node.active = show;
+        }
+    }
+
+
+    private onRemoveClicked() {
+        if (this.onRemoveCallback && this.friendData) {
+            this.onRemoveCallback(this.friendData.uid);
+        }
+    }
+
     onDestroy() {
         if (this.visitButton) {
             this.visitButton.node.off(Button.EventType.CLICK, this.onVisitClicked, this);
+        }
+        if (this.removeButton) {
+            this.removeButton.node.off(Button.EventType.CLICK, this.onRemoveClicked, this);
         }
     }
 }
