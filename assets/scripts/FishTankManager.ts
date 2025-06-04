@@ -24,6 +24,56 @@ export class FishTankManager extends Component {
     @property
     autoLoadFish: boolean = true;
 
+    @property
+    eatDistance: number = 20;
+
+    @property
+    trackingRange: number = 400;
+
+    update(deltaTime: number) {
+        // check for collision of fish and food (eating) 
+        for (const food of this.fishTank.getActiveFishFood()) {
+            for (const fish of this.fishTank.getActiveFish()) {
+                if (this.isFoodNearFish(food.node, fish.node)) {
+                    fish.eatFood(food.getFoodType());
+                    food.destroyFood();
+                    break; // One fish eats one food
+                }
+            }
+        }
+
+        for (const fish of this.fishTank.getActiveFish()) {
+            let closestFood: Node | null = null;
+            let minDistance = Infinity;
+
+            const fishPos = fish.node.getPosition();
+
+            for (const food of this.fishTank.getActiveFishFood()) {
+                if (!food || !food.node || !food.node.isValid) continue;
+                const foodPos = food.node.getPosition();
+                const distance = Vec3.distance(fishPos, foodPos);
+
+                if (distance < this.trackingRange && distance < minDistance) {
+                    minDistance = distance;
+                    closestFood = food.node;
+                }
+            }
+
+            if (closestFood) {
+                fish.setTarget(closestFood.getPosition());
+            } else {
+                fish.clearTarget();
+            }
+        }
+
+    }
+
+    private isFoodNearFish(foodNode: Node, fishNode: Node): boolean {
+        const foodPos = foodNode.getWorldPosition();
+        const fishPos = fishNode.getWorldPosition();
+        const distance = Vec3.distance(foodPos, fishPos);
+        return distance < this.eatDistance; // Adjust threshold as needed
+    }
 
     private unsubscribeFishData: (() => void) | null = null; start() {
         if (this.autoLoadFish) {
@@ -184,6 +234,4 @@ export class FishTankManager extends Component {
     onDestroy() {
         this.cleanup();
     }
-
-
 }

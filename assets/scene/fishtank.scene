@@ -399,8 +399,6 @@
       "__id__": 7
     },
     "autoLoadFish": true,
-    "eatDistance": 20,
-    "trackingRange": 400,
     "_id": "b50a2KmU5PhrPf+2oopASN"
   },
   {
@@ -503,7 +501,7 @@
         "__expectedType__": "cc.SpriteFrame"
       },
       {
-        "__uuid__": "b04461f3-f7ff-4b12-846a-35b08a15d034@f9941",
+        "__uuid__": "a4b42a64-cb83-425b-97ab-3692e52e8293@f9941",
         "__expectedType__": "cc.SpriteFrame"
       },
       {
@@ -511,7 +509,7 @@
         "__expectedType__": "cc.SpriteFrame"
       },
       {
-        "__uuid__": "ba1108ed-4582-427a-bc3f-c1e9dcc921e3@f9941",
+        "__uuid__": "abc0cafa-0f88-41cc-bd05-6bb897b2cbe0@f9941",
         "__expectedType__": "cc.SpriteFrame"
       },
       {
