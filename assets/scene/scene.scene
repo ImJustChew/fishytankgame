@@ -182,11 +182,17 @@
     "__prefab": null,
     "spriteFrames": [
       {
-        "__uuid__": "b04461f3-f7ff-4b12-846a-35b08a15d034@f9941",
+        "__uuid__": "60177fbd-02c4-44ca-b25a-ae8e81ecfee6@f9941",
         "__expectedType__": "cc.SpriteFrame"
       },
-      null,
-      null
+      {
+        "__uuid__": "e5aec1b1-57ec-4496-8766-9007a9f65635@f9941",
+        "__expectedType__": "cc.SpriteFrame"
+      },
+      {
+        "__uuid__": "e5517c01-0aa9-49b2-bb37-62bf49745710@f9941",
+        "__expectedType__": "cc.SpriteFrame"
+      }
     ],
     "_id": "e8bsOqdb5O/ozcRRlWWb8i"
   },
@@ -249,7 +255,7 @@
     "_priority": 0,
     "_fov": 45,
     "_fovAxis": 0,
-    "_orthoHeight": 473.91003460207617,
+    "_orthoHeight": 388.14574898785423,
     "_near": 0,
     "_far": 2000,
     "_color": {
@@ -391,6 +397,9 @@
     "fishTank": {
       "__id__": 10
     },
+    "fishManager": {
+      "__id__": 4
+    },
     "autoLoadFish": true,
     "_id": "5eCgdHt01LxrLXBaiz3SLr"
   },
@@ -404,10 +413,6 @@
     },
     "_enabled": true,
     "__prefab": null,
-    "fishPrefab": {
-      "__uuid__": "cfa564d1-5382-44f8-b72e-18ea7102df12",
-      "__expectedType__": "cc.Prefab"
-    },
     "maxFishCount": 10,
     "_id": "cflms/puZFM67o8gnVg3Ou"
   },
