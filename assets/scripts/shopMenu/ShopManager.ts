@@ -18,9 +18,6 @@ export class ShopManager extends Component {
   @property(ScrollView)
   public scrollView: ScrollView = null!;
 
-  @property(Label)
-  public moneyLabel: Label = null!;
-
   @property(FishManager)
   public fishManager: FishManager = null!;
 
@@ -39,7 +36,6 @@ export class ShopManager extends Component {
     if (!userData) {
       console.warn('ShopManager: 用户未登录或无法读取数据，使用默认金钱');
       this.money = this.defaultMoney;
-      this.moneyLabel.string = `Money: $${this.money}`;
       return;
     }
     if (typeof userData.money !== 'number') {
@@ -48,7 +44,6 @@ export class ShopManager extends Component {
     } else {
       this.money = userData.money;
     }
-    this.moneyLabel.string = `Money: $${this.money}`;
   }
 
   private populateFishList() {
@@ -107,7 +102,6 @@ export class ShopManager extends Component {
     try {
       await purchaseFish(typeId);
       this.money -= price;
-      this.moneyLabel.string = `Money: $${this.money}`;
       console.log(`已购买鱼 ${typeId}，剩余 $${this.money}`);
 
       const fishNode = event.target as Node;
