@@ -297,6 +297,7 @@ export class FishTankManager extends Component {
 
         this.fishTank.spawnFishFood(currentFoodType, spawnLocation, this.fishFoodManager);
         console.log('Spawned default fish food for testing');
+        console.log('Touch position:', touchPos);
     }
 
     private cleanup() {

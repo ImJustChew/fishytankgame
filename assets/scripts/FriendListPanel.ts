@@ -38,6 +38,9 @@ export class FriendListPanel extends Component {
     @property(EditBox)
     addFriendEditBox: EditBox = null;
 
+    @property(Label)
+    displayEditBoxLabel: Label = null;
+
     private friendItems: FriendItem[] = [];
     private stealHistory: { incoming: StealAttempt[]; outgoing: StealAttempt[] } = { incoming: [], outgoing: [] };
 
@@ -64,8 +67,8 @@ export class FriendListPanel extends Component {
 
     start() {
         this.loadFriendsList();
-        this.generateTestFriendItems(true); // two testing item, delete after testing
-        this.generateTestFriendItems(false); // two testing item, delete after testing
+        //this.generateTestFriendItems(true); // two testing item, delete after testing
+        //this.generateTestFriendItems(false); // two testing item, delete after testing
         this.adjustContentHeight();
         this.addFriendPanel.active = false;
         this.isAddFriendPanelVisible = false;
@@ -190,6 +193,9 @@ export class FriendListPanel extends Component {
         if (this.notificationLabel) {
             this.notificationLabel.node.active = false;
         }
+        if(this.displayEditBoxLabel) {
+            this.displayEditBoxLabel.string = "";
+        }
         this.node.active = false;
         console.log('friends panel closed');
     }
@@ -306,6 +312,9 @@ export class FriendListPanel extends Component {
             if (this.notificationLabel) {
                 this.notificationLabel.node.active = false;
             }
+        }
+        if(this.displayEditBoxLabel) {
+            this.displayEditBoxLabel.string = "";
         }
     }
 
