@@ -1,9 +1,10 @@
-import { _decorator, Component, Button, Node, Label } from 'cc';
+import { _decorator, Component, Button, Node, Label, director } from 'cc';
 import authService from './firebase/auth-service';
 import databaseService, { UserData } from './firebase/database-service';
 import { UsernameDialog } from './UsernameDialog';
 import { INITIAL_MONEY } from './constants';
 import firebase from './firebase/firebase-compat.js';
+import { StartButtonController } from './StartButtonController';
 
 const { ccclass, property } = _decorator;
 
@@ -120,11 +121,30 @@ export class AuthButtonHandler extends Component {
 
             console.log('[AuthButtonHandler] User profile created successfully');
             this.showUserUI(username);
+            
+            // Refresh any StartButtonController instances in the scene
+            this.refreshStartButtonControllers();
         } catch (error) {
             console.error('[AuthButtonHandler] Error creating user profile:', error);
             // Show username dialog again on error
             this.promptForUsername(user);
         }
+    }
+
+    /**
+     * Find and refresh all StartButtonController instances in the scene
+     */
+    private refreshStartButtonControllers() {
+        // Look for StartButtonController in the scene
+        const startButtonControllers = director.getScene().getComponentsInChildren(StartButtonController);
+        
+        console.log(`[AuthButtonHandler] Found ${startButtonControllers.length} StartButtonController instances`);
+        
+        // Refresh each controller's button state
+        startButtonControllers.forEach(controller => {
+            console.log('[AuthButtonHandler] Refreshing StartButtonController');
+            controller.refreshButtonState();
+        });
     }
 
     private showSignInUI() {

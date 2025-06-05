@@ -1,6 +1,7 @@
 import { _decorator, Component, Node, Label, EditBox, Button } from 'cc';
 import databaseService from './firebase/database-service';
 import { USERNAME_MIN_LENGTH, USERNAME_MAX_LENGTH } from './constants';
+import { StartButtonController } from './StartButtonController';
 
 const { ccclass, property } = _decorator;
 
@@ -15,6 +16,12 @@ export class UsernameDialog extends Component {
     @property(Button)
     confirmButton: Button | null = null; @property(Label)
     errorLabel: Label | null = null;
+
+    @property({
+        type: StartButtonController,
+        tooltip: 'Optional: Reference to StartButtonController to refresh after username confirmation'
+    })
+    startButtonController: StartButtonController | null = null;
 
     private onConfirmCallback: ((username: string) => void) | null = null;
 
@@ -78,6 +85,12 @@ export class UsernameDialog extends Component {
                 this.onConfirmCallback(username);
             }
 
+            // Refresh the start button if set
+            if (this.startButtonController) {
+                console.log('[UsernameDialog] Refreshing StartButtonController');
+                this.startButtonController.refreshButtonState();
+            }
+
         } catch (error) {
             console.error('Error checking username availability:', error);
             this.showError('Error checking username. Please try again.');
@@ -122,6 +135,14 @@ export class UsernameDialog extends Component {
             this.errorLabel.string = '';
             this.errorLabel.node.active = false;
         }
+    }
+
+    /**
+     * Set a reference to a StartButtonController to refresh after username confirmation
+     * @param controller The StartButtonController instance to refresh
+     */
+    public setStartButtonController(controller: StartButtonController): void {
+        this.startButtonController = controller;
     }
 
     onDestroy() {
