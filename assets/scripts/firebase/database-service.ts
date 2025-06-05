@@ -26,6 +26,13 @@ export type UserData = {
     };
     selectedAvatar?: string; // currently selected avatar ID
     avatarCollection?: UserAvatarCollection; // unlocked avatars
+    battleStats?: {
+        level: number;
+        winRate: number;
+        lotteryTickets: number;
+        totalBattles: number;
+        totalWins: number;
+    };
 }
 
 export type SavedFishType = {
@@ -273,6 +280,13 @@ class DatabaseService {
                 x: 0,
                 y: 0,
                 lastUpdated: Date.now()
+            },
+            battleStats: {
+                level: 1,
+                winRate: 0,
+                lotteryTickets: 0,
+                totalBattles: 0,
+                totalWins: 0
             }
         };
 
@@ -513,7 +527,282 @@ class DatabaseService {
         }
     }
 
-    // Add to the end of the class, before the closing brace
+    /**
+     * Get user's battle stats
+     */
+    async getBattleStats(): Promise<UserData['battleStats'] | null> {
+        const user = authService.getCurrentUser();
+        if (!user) {
+            console.warn('Cannot get battle stats: No user is signed in');
+            return null;
+        }
+
+        try {
+            const snapshot = await database.ref(`users/${user.uid}/battleStats`).once('value');
+            const data = snapshot.val();
+            console.log(`Retrieved battle stats for user ${user.uid}:`, data);
+            return data || null;
+        } catch (error) {
+            console.error('Error getting battle stats:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Update user's battle stats
+     */
+    async updateBattleStats(updates: Partial<UserData['battleStats']>): Promise<void> {
+        const user = authService.getCurrentUser();
+        if (!user) {
+            console.warn('Cannot update battle stats: No user is signed in');
+            return;
+        }
+
+        try {
+            await database.ref(`users/${user.uid}/battleStats`).update(updates);
+            console.log(`Battle stats updated for user ${user.uid}:`, updates);
+        } catch (error) {
+            console.error('Error updating battle stats:', error);
+        }
+    }
+
+    /**
+     * Initialize battle stats for a new user
+     */
+    async initializeBattleStats(uid: string): Promise<void> {
+        try {
+            const defaultBattleStats = {
+                level: 1,
+                winRate: 0,
+                lotteryTickets: 0,
+                totalBattles: 0,
+                totalWins: 0
+            };
+
+            await database.ref(`users/${uid}/battleStats`).set(defaultBattleStats);
+            console.log(`Initialized battle stats for user ${uid}:`, defaultBattleStats);
+        } catch (error) {
+            console.error('Error initializing battle stats:', error);
+        }
+    }
+
+    /**
+     * Add lottery tickets to user's account
+     */
+    async addLotteryTickets(ticketsToAdd: number): Promise<void> {
+        const user = authService.getCurrentUser();
+        if (!user) {
+            console.warn('Cannot add lottery tickets: No user is signed in');
+            return;
+        }
+
+        try {
+            // Get current ticket count
+            const battleStats = await this.getBattleStats();
+            const currentTickets = battleStats?.lotteryTickets || 0;
+            const newTicketCount = currentTickets + ticketsToAdd;
+
+            // Update the ticket count
+            await this.updateBattleStats({ lotteryTickets: newTicketCount });
+            console.log(`Added ${ticketsToAdd} lottery tickets for user ${user.uid}. New total: ${newTicketCount}`);
+        } catch (error) {
+            console.error('Error adding lottery tickets:', error);
+        }
+    }
+
+    /**
+     * Record a battle result and update stats accordingly
+     */
+    async recordBattleResult(won: boolean, battleType: 'quick' | 'ranked'): Promise<void> {
+        const user = authService.getCurrentUser();
+        if (!user) {
+            console.warn('Cannot record battle result: No user is signed in');
+            return;
+        }
+
+        try {
+            // Get current battle stats
+            const currentStats = await this.getBattleStats();
+            const stats = currentStats || {
+                level: 1,
+                winRate: 0,
+                lotteryTickets: 0,
+                totalBattles: 0,
+                totalWins: 0
+            };
+
+            // Update battle statistics
+            const newTotalBattles = stats.totalBattles + 1;
+            const newTotalWins = stats.totalWins + (won ? 1 : 0);
+            const newWinRate = Math.round((newTotalWins / newTotalBattles) * 100);
+
+            // Calculate level based on total battles (simple progression)
+            const newLevel = Math.floor(newTotalBattles / 10) + 1;
+
+            // Calculate ticket rewards
+            const WIN_TICKETS = 5;
+            const LOSS_TICKETS = 1;
+            const RANKED_BONUS = 2;
+
+            let ticketsEarned = won ? WIN_TICKETS : LOSS_TICKETS;
+            if (battleType === 'ranked') {
+                ticketsEarned += RANKED_BONUS;
+            }
+
+            const newTicketCount = stats.lotteryTickets + ticketsEarned;
+
+            // Update all stats
+            await this.updateBattleStats({
+                level: newLevel,
+                winRate: newWinRate,
+                lotteryTickets: newTicketCount,
+                totalBattles: newTotalBattles,
+                totalWins: newTotalWins
+            });
+
+            console.log(`Battle result recorded for user ${user.uid}: ${won ? 'Win' : 'Loss'} in ${battleType} mode. Tickets earned: ${ticketsEarned}`);
+        } catch (error) {
+            console.error('Error recording battle result:', error);
+        }
+    }
+
+    /**
+     * Save a match record to Firebase
+     */
+    async saveMatchRecord(matchRecord: any): Promise<void> {
+        try {
+            const matchRef = database.ref('matches').push();
+            await matchRef.set({
+                ...matchRecord,
+                timestamp: Date.now(),
+                version: '1.0'
+            });
+            console.log('Match record saved successfully:', matchRecord.matchId);
+        } catch (error) {
+            console.error('Failed to save match record:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Get match records for a specific user
+     */
+    async getUserMatchHistory(userId: string, limit: number = 10): Promise<any[]> {
+        try {
+            const snapshot = await database.ref('matches')
+                .orderByChild('playerIds')
+                .equalTo(userId)
+                .limitToLast(limit)
+                .once('value');
+
+            const data = snapshot.val();
+            if (!data) return [];
+
+            return Object.keys(data).map(key => ({
+                ...data[key],
+                id: key
+            }));
+        } catch (error) {
+            console.error('Error getting user match history:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Create a matchmaking request in Firebase
+     */
+    async createMatchRequest(request: any): Promise<string> {
+        try {
+            const requestRef = database.ref('matchRequests').push();
+            await requestRef.set({
+                ...request,
+                timestamp: Date.now(),
+                status: 'pending'
+            });
+            console.log('Match request created:', requestRef.key);
+            return requestRef.key!;
+        } catch (error) {
+            console.error('Error creating match request:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Find available match requests
+     */
+    async findMatchRequests(playerLevel: number, tankSize: string, excludePlayerId: string): Promise<any[]> {
+        try {
+            const snapshot = await database.ref('matchRequests')
+                .orderByChild('status')
+                .equalTo('pending')
+                .once('value');
+
+            const data = snapshot.val();
+            if (!data) return [];
+
+            // Filter compatible matches (similar level, same tank size, different player)
+            const matches = Object.keys(data)
+                .map(key => ({ ...data[key], id: key }))
+                .filter(request =>
+                    request.playerId !== excludePlayerId &&
+                    request.tankSize === tankSize &&
+                    Math.abs(request.playerLevel - playerLevel) <= 2 // Level difference tolerance
+                );
+
+            return matches;
+        } catch (error) {
+            console.error('Error finding match requests:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Accept a match request and create a match
+     */
+    async acceptMatchRequest(requestId: string, acceptingPlayerId: string): Promise<string> {
+        try {
+            // Create the match
+            const matchRef = database.ref('activeMatches').push();
+            const matchId = matchRef.key!;
+
+            // Get the original request
+            const requestSnapshot = await database.ref(`matchRequests/${requestId}`).once('value');
+            const request = requestSnapshot.val();
+
+            if (!request) {
+                throw new Error('Match request not found');
+            }
+
+            // Create the match record
+            await matchRef.set({
+                player1: request.playerId,
+                player2: acceptingPlayerId,
+                status: 'active',
+                createdAt: Date.now()
+            });
+
+            // Remove the match request
+            await database.ref(`matchRequests/${requestId}`).remove();
+
+            console.log('Match created:', matchId);
+            return matchId;
+        } catch (error) {
+            console.error('Error accepting match request:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Delete a match request
+     */
+    async deleteMatchRequest(requestId: string): Promise<void> {
+        try {
+            await database.ref(`matchRequests/${requestId}`).remove();
+            console.log('Match request deleted:', requestId);
+        } catch (error) {
+            console.error('Error deleting match request:', error);
+        }
+    }
 }
 
 const databaseService = new DatabaseService();

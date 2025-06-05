@@ -395,47 +395,6 @@ export class FishTank extends Component {
     }
 
     /**
-     * Load and display friends' players in the tank
-     */
-    public async loadFriendsPlayers(playerManager?: PlayerManager): Promise<void> {
-        try {
-            // Remove existing friend players (keep current user)
-            this.clearFriendPlayers();
-
-            // Get friends' player positions
-            const friendsData = await databaseService.getFriendsPlayerPositions();
-
-            // Spawn friend players (display-only)
-            for (const friendUid in friendsData) {
-                if (friendsData.hasOwnProperty(friendUid)) {
-                    if (this.activePlayers.length >= this.maxPlayerCount) {
-                        console.warn('Maximum player count reached, cannot spawn more friend players');
-                        break;
-                    }
-
-                    const friendInfo = friendsData[friendUid];
-                    const playerData: PlayerData = {
-                        id: friendUid,
-                        ownerId: friendUid,
-                        x: friendInfo.x,
-                        y: friendInfo.y,
-                        isCurrentUser: false
-                    };
-
-                    const friendPlayer = this.spawnPlayer(playerData, playerManager);
-                    if (friendPlayer) {
-                        console.log(`Spawned friend player: ${friendInfo.username} at (${friendInfo.x}, ${friendInfo.y})`);
-                    }
-                }
-            }
-
-            console.log(`Loaded ${Object.keys(friendsData).length} friend players`);
-        } catch (error) {
-            console.error('Error loading friends players:', error);
-        }
-    }
-
-    /**
      * Load player sprite asynchronously using the avatar system
      */
     private async loadPlayerSprite(spriteComponent: Sprite, ownerId: string, playerManager: PlayerManager) {
@@ -509,23 +468,6 @@ export class FishTank extends Component {
 
         return playerComponent;
     }
-
-    /**
-     * Remove all friend players but keep current user player
-     */
-    public clearFriendPlayers() {
-        const friendPlayers = this.activePlayers.filter(player => {
-            const playerData = player.getPlayerData();
-            return playerData && !playerData.isCurrentUser;
-        });
-
-        friendPlayers.forEach(player => {
-            this.removePlayer(player);
-        });
-
-        console.log(`Cleared ${friendPlayers.length} friend players`);
-    }
-
     /**
      * Remove all players including current user
      */

@@ -215,10 +215,6 @@ export class FishTankManager extends Component {
         try {
             // Spawn current user's player
             await this.fishTank.spawnCurrentUserPlayer(this.playerManager);
-
-            // Load friends' players
-            await this.fishTank.loadFriendsPlayers(this.playerManager);
-
             console.log('Player system initialized successfully');
         } catch (error) {
             console.error('Error initializing player system:', error);
@@ -240,8 +236,6 @@ export class FishTankManager extends Component {
         }
 
         try {
-            // Reload friends' players (current user position is updated automatically)
-            await this.fishTank.loadFriendsPlayers(this.playerManager);
             console.log('Players refreshed successfully');
         } catch (error) {
             console.error('Error refreshing players:', error);
