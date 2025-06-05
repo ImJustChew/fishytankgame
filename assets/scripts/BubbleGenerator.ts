@@ -115,7 +115,7 @@ export class BubbleGenerator extends Component {
         this.node.addChild(bubbleNode);
 
         // initialize the bubble component
-        const bubbleComponent = bubbleNode.getComponent(Bubble);
+        const bubbleComponent = bubbleNode.children[0]?.getComponent(Bubble);
         if (bubbleComponent) {
             bubbleComponent.init(this.spreadRange, this.maxHeight, this.bubbleSpeed);
         }

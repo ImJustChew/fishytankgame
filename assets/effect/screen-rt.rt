@@ -1,0 +1,9 @@
+{
+  "__type__": "cc.RenderTexture",
+  "content": {
+    "base": "1,1,0,0,0,0",
+    "w": 1280,
+    "h": 720,
+    "n": "screen-rt"
+  }
+}

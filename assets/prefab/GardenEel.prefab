@@ -274,7 +274,7 @@
     "sprite": {
       "__id__": 5
     },
-    "random_x": 200,
+    "random_x": 20,
     "_id": ""
   },
   {
@@ -290,6 +290,7 @@
       "__id__": 0
     },
     "fileId": "eb+shHpl1EF707gsk3huye",
+    "instance": null,
     "targetOverrides": null
   }
 ]

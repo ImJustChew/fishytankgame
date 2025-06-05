@@ -104,7 +104,7 @@
       "__expectedType__": "cc.Prefab"
     },
     "spreadRange": 80,
-    "maxHeight": 400,
+    "maxHeight": 800,
     "spawnRate": 0.1,
     "bubbleSpeed": 120,
     "autoStart": true,
@@ -124,6 +124,7 @@
       "__id__": 0
     },
     "fileId": "5ejY4CTxZI8KOb4cOeLUKz",
+    "instance": null,
     "targetOverrides": null
   }
 ]
