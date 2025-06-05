@@ -66,7 +66,7 @@ export class FriendListPanel extends Component {
     }
 
     start() {
-        this.loadFriendsList();
+        //this.loadFriendsList();
         //this.generateTestFriendItems(true); // two testing item, delete after testing
         //this.generateTestFriendItems(false); // two testing item, delete after testing
         this.adjustContentHeight();
