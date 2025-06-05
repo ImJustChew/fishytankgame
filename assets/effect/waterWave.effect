@@ -1,0 +1,146 @@
+CCEffect %{
+  techniques:
+  - passes:
+    - vert: sprite-vs:vert
+      frag: sprite-fs:frag
+      depthStencilState:
+        depthTest: false
+        depthWrite: false
+      blendState:
+        targets:
+        - blend: true
+          blendSrc: src_alpha
+          blendDst: one_minus_src_alpha
+          blendDstAlpha: one_minus_src_alpha
+      rasterizerState:
+        cullMode: none
+      properties:
+        alphaThreshold: { value: 0.5 }
+        map: { value: white }
+        noiseIntensity: { value: 0.03 }
+        stripeIntensity: { value: 0.08 }
+}%
+
+CCProgram sprite-vs %{
+  precision highp float;
+  #include <builtin/uniforms/cc-global>
+  #if USE_LOCAL
+    #include <builtin/uniforms/cc-local>
+  #endif
+
+  in vec3 a_position;
+  in vec2 a_texCoord;
+  in vec4 a_color;
+
+  out vec4 color;
+  out vec2 uv0;
+
+  vec4 vert () {
+    vec4 pos = vec4(a_position, 1);
+
+    #if USE_LOCAL
+      pos = cc_matWorld * pos;
+    #endif
+
+    #if USE_PIXEL_ALIGNMENT
+      pos = cc_matView * pos;
+      pos.xyz = floor(pos.xyz);
+      pos = cc_matProj * pos;
+    #else
+      pos = cc_matViewProj * pos;
+    #endif
+
+    uv0 = a_texCoord;
+    color = a_color;
+
+    return pos;
+  }
+}%
+
+CCProgram sprite-fs %{
+  precision highp float;
+  #include <builtin/internal/embedded-alpha>
+  #include <builtin/internal/alpha-test>
+  #include <builtin/uniforms/cc-global>
+
+  in vec4 color;
+  
+  #if USE_TEXTURE
+    in vec2 uv0;
+    #pragma builtin(local)
+    layout(set = 2, binding = 10) uniform sampler2D cc_spriteTexture;
+    uniform sampler2D map;
+  #endif
+
+  uniform FragConstants {
+    float u_time;
+  };
+
+  uniform Constants {
+    float noiseIntensity;
+    float stripeIntensity;
+  };
+
+  // 噪音函數
+  float Noise21 (vec2 p, float ta, float tb) {
+    return fract(sin(p.x*ta+p.y*tb)*5678.0);
+  }
+
+  // 應用噪音效果
+  vec3 applyNoise(vec2 uv) {
+    float t = cc_time.x + 123.0;
+    float ta = t * 0.654321;
+    float tb = t * (ta * 0.123456);
+    float c = Noise21(uv, ta, tb);
+    return vec3(c);
+  }
+
+  // 向下移動的條紋效果
+  float getMovingStripes(vec2 uv) {
+    float stripesSize = 1200.0;
+    float stripesSpeed = 3.0;
+    // 向下移動的條紋
+    float stripes = sin(uv.y * stripesSize + cc_time.x * stripesSpeed);
+    // 讓條紋間的空隙較黑
+    stripes = stripes * 0.5 + 0.5;
+    stripes = 1.0 - pow(stripes, 1.3);
+    return stripes;
+  }
+
+  vec4 frag () {
+    vec4 o = vec4(1.0);
+    
+    #if USE_TEXTURE
+      // --- 水波紋扭曲效果（基底） ---
+      vec4 t_map = CCSampleWithAlphaSeparated(map, fract(uv0 + u_time * 0.02));
+      float offset = t_map.g;
+      float scaleX = 0.005;
+      float scaleY = 0.005;
+
+      vec2 waveUV = vec2(
+        uv0.x + offset * scaleX,
+        uv0.y + offset * scaleY
+      );
+
+      // 用扭曲後的UV取樣主紋理
+      vec4 t_image = CCSampleWithAlphaSeparated(cc_spriteTexture, waveUV);
+      o = t_image;
+
+      // --- 噪音效果疊加 ---
+      vec3 noise = applyNoise(uv0);
+      // 將噪音以加法混合方式疊加
+      o.rgb += (noise - 0.5) * noiseIntensity;
+
+      // --- 向下移動條紋效果疊加 ---
+      float stripes = getMovingStripes(uv0);
+      // 將條紋效果以乘法方式混合，讓空隙較暗
+      o.rgb *= (1.0 - stripeIntensity) + (stripes * stripeIntensity);
+
+    #endif
+
+    o *= color;
+
+    ALPHA_TEST(o);
+    return o;
+  }
+}%
