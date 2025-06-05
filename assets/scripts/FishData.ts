@@ -10,6 +10,12 @@ export interface Fish {
     description: string; // Description of the fish
     price: number;    // Price of the fish
     health: number;
+    // NEW BATTLE PROPERTIES
+    attackHP?: number;    // Combat health for attacking (0 = non-combatant)
+    defenseHP?: number;   // Combat health for defending (0 = non-defender)
+    attackDamage?: number;// Damage dealt per attack
+    attackSpeed?: number; // Movement speed when attacking
+    attackRange?: number; // Detection range for enemies
 }
 
 /**
@@ -22,28 +28,44 @@ export const FISH_LIST: Fish[] = [
         name: "Ruby Brem",
         description: "A fiery red swimmer, known for its bold energy and school-loving nature.",
         price: 50,
-        health: 100
+        health: 100,
+        defenseHP: 80,
+        attackDamage: 15,
+        attackSpeed: 60,
+        attackRange: 100
     },
     {
         id: "fish_002",
         name: "Abyssal Pike",
         description: "Dwelling in the dark, this stealthy predator strikes from the shadows.",
         price: 75,
-        health: 200
+        health: 200,
+        attackHP: 150,
+        attackDamage: 35,
+        attackSpeed: 80,
+        attackRange: 120
     },
     {
         id: "fish_003",
         name: "Nimlet",
         description: "Small but swift, Nimlets dart around with unmatched speed and curiosity.",
         price: 30,
-        health: 50
+        health: 50,
+        attackHP: 40,
+        attackDamage: 20,
+        attackSpeed: 100,
+        attackRange: 80
     },
     {
         id: "fish_004",
         name: "Azure Snapper",
         description: "Calm and calculated, it prefers clean waters and peaceful tankmates.",
         price: 30,
-        health: 70
+        health: 70,
+        defenseHP: 90,
+        attackDamage: 12,
+        attackSpeed: 50,
+        attackRange: 90
     },
     {
         id: "fish_005",
@@ -51,34 +73,52 @@ export const FISH_LIST: Fish[] = [
         description: "A rare, radiant fish that gleams under tank lights — a true collector's gem.",
         price: 30,
         health: 90
+        // Neutral fish - no battle stats
     },
     {
         id: "fish_006",
         name: "Crimson Koi",
         description: "A calm and noble swimmer, revered for its ruby-red scales and graceful glides through the tank.",
         price: 50,
-        health: 300
+        health: 300,
+        defenseHP: 250,
+        attackDamage: 25,
+        attackSpeed: 40,
+        attackRange: 110
     },
     {
         id: "fish_007",
         name: "Clownie Pop",
         description: "Bubbly and playful, Clownie Pop brings color and laughter to any underwater scene.",
         price: 40,
-        health: 500
-    }, 
+        health: 500,
+        defenseHP: 300,
+        attackDamage: 18,
+        attackSpeed: 55,
+        attackRange: 95
+    },
     {
         id: "fish_008",
         name: "Regal Banner",
         description: "This royal-striped beauty glides with pride and elegance, often stealing the spotlight.",
-        price: 70, 
-        health: 900
+        price: 70,
+        health: 900,
+        attackHP: 600,
+        defenseHP: 700,
+        attackDamage: 40,
+        attackSpeed: 70,
+        attackRange: 130
     },
     {
         id: "fish_0009",
         name: "Verdant Darter",
         description: "Quick and curious, this green dart zips through currents like a leaf in the wind.",
-        price: 35, 
-        health: 10000
+        price: 35,
+        health: 10000,
+        attackHP: 8000,
+        attackDamage: 100,
+        attackSpeed: 120,
+        attackRange: 150
     }
     // Add more fish as needed
 ];

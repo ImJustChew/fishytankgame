@@ -1,6 +1,8 @@
 import { _decorator, Component, Node, Vec3, Sprite, math, tween, Tween } from 'cc';
 import { SavedFishType } from './firebase/database-service';
+import databaseService from './firebase/database-service';
 import { FISH_FOOD_LIST, FishFoodType } from './FishFoodData';
+import { FISH_LIST } from './FishData';
 
 const { ccclass, property } = _decorator;
 
@@ -10,10 +12,13 @@ export class Fish extends Component {
     moveSpeed: number = 50;
 
     @property
-    maxHealth: number = 500;
+    changeDirectionInterval: number = 3; // Increased from 2 to 3 seconds for longer swimming segments
 
     @property
-    changeDirectionInterval: number = 3; // Increased from 2 to 3 seconds for longer swimming segments
+    hungerDecayRate: number = 2; // Health points lost per hour when not fed
+
+    @property
+    hungerDecayInterval: number = 3600; // Time in seconds before health starts decaying (1 hour)
 
     flipSpriteHorizontally: boolean = false;
 
@@ -35,6 +40,8 @@ export class Fish extends Component {
     }
 
     update(deltaTime: number) {
+        const variation = this.changeDirectionInterval * 0.5; // 50% variation
+        const randomInterval = this.changeDirectionInterval + (Math.random() - 0.5) * 2 * variation;
         if (this.targetPos) {
             const currentPos = this.node.getPosition();
             const direction = new Vec3();
@@ -54,13 +61,17 @@ export class Fish extends Component {
                 const movement = direction.multiplyScalar(this.moveSpeed * 3 * deltaTime);
                 this.node.setPosition(currentPos.add(movement));
             }
+        } else {
+            if (this.moveTween == null) {
+                // If no target, continue normal movement
+                this.startMovement();
+            }
         }
 
         this.directionTimer += deltaTime;
 
         // Add random variation to direction change interval (±50% of base interval)
-        const variation = this.changeDirectionInterval * 0.5; // 50% variation
-        const randomInterval = this.changeDirectionInterval + (Math.random() - 0.5) * 2 * variation;
+
 
         // Change direction randomly or when hitting bounds
         if (!this.targetPos && (this.directionTimer >= randomInterval || this.isHittingBounds())) {
@@ -68,11 +79,22 @@ export class Fish extends Component {
             this.directionTimer = 0;
         }
 
+        // Check for health decay due to hunger
+        this.checkHealthDecay(deltaTime);
     }
 
     public initializeFish(fishData: SavedFishType, tankBounds: { min: Vec3, max: Vec3 }) {
         this.fishData = fishData;
         this.tankBounds = tankBounds;
+
+        // Ensure lastFedTime is set for new fish
+        if (!this.fishData.lastFedTime) {
+            this.fishData.lastFedTime = Date.now();
+            // Update the database with the initial lastFedTime
+            if (this.fishData.id) {
+                databaseService.updateFish(this.fishData.id, { lastFedTime: this.fishData.lastFedTime });
+            }
+        }
 
         // Set initial random position within tank bounds
         this.setRandomPosition();
@@ -99,7 +121,9 @@ export class Fish extends Component {
 
     private initializeMovement() {
         this.changeDirection();
-    } private changeDirection() {
+    }
+
+    private changeDirection() {
         // Generate random direction
         const angle = Math.random() * Math.PI * 2;
         this.currentDirection.set(
@@ -123,7 +147,9 @@ export class Fish extends Component {
 
         // Start new movement
         this.startMovement();
-    } private startMovement() {
+    }
+
+    private startMovement() {
         if (!this.tankBounds) return;
 
         const currentPos = this.node.getPosition();
@@ -192,6 +218,36 @@ export class Fish extends Component {
             .start();
     }
 
+    /**
+     * Check if fish health should decay due to hunger
+     * Fish lose health over time when they haven't been fed
+     */
+    private checkHealthDecay(deltaTime: number) {
+        if (!this.fishData || !this.fishData.lastFedTime) return;
+
+        const currentTime = Date.now();
+        const timeSinceLastFed = (currentTime - this.fishData.lastFedTime) / 1000; // Convert to seconds
+
+        // Only start decaying health after the hunger interval has passed
+        if (timeSinceLastFed > this.hungerDecayInterval) {
+            // Calculate how much health to decay based on time passed
+            const timeOverHungerLimit = timeSinceLastFed - this.hungerDecayInterval;
+            const hoursOverLimit = timeOverHungerLimit / 3600; // Convert to hours
+
+            // Decay health gradually - only lose health every hour, not every frame
+            const healthDecayAmount = Math.floor(hoursOverLimit * this.hungerDecayRate);
+            const expectedHealth = this.getMaxHealth() - healthDecayAmount;
+
+            // Only update if the expected health is different from current health
+            // This prevents constant database updates
+            if (this.fishData.health > expectedHealth) {
+                const healthLoss = this.fishData.health - expectedHealth;
+                console.log(`Fish ${this.fishData.id} losing ${healthLoss} health due to hunger (${Math.floor(timeSinceLastFed / 3600)} hours since last fed)`);
+                this.updateHealth(-healthLoss); // Use negative value to decrease health
+            }
+        }
+    }
+
     public eatFood(foodType: FishFoodType | null) {
         if (!foodType) return;
 
@@ -218,28 +274,82 @@ export class Fish extends Component {
         return this.fishData;
     }
 
+    /**
+     * Get the maximum health for this fish type from FISH_LIST
+     */
+    public getMaxHealth(): number {
+        if (!this.fishData) return 100; // Default fallback
+
+        const fishDefinition = FISH_LIST.find(fish => fish.id === this.fishData!.type);
+        return fishDefinition ? fishDefinition.health : 100; // Default fallback if fish type not found
+    }
+
     public setFishType(type: string) {
         if (this.fishData) {
             this.fishData.type = type;
+
+            // Update the database with new fish type
+            if (this.fishData.id) {
+                databaseService.updateFish(this.fishData.id, { type: type });
+            }
         }
     }
 
     public updateHealth(health: number) {
-        if (this.fishData.health >= this.maxHealth) {
-            this.node.destroy();
-        }
         if (this.fishData) {
+            // Update health first
             this.fishData.health = this.fishData.health + health;
+
+            // Clamp health between 0 and maxHealth
+            const maxHealth = this.getMaxHealth();
+            this.fishData.health = Math.max(0, Math.min(this.fishData.health, maxHealth));
+
+            // Update the database with new health value
+            if (this.fishData.id) {
+                databaseService.updateFish(this.fishData.id, { health: this.fishData.health });
+            }
+
+            // Destroy fish if health reaches 0
+            if (this.fishData.health <= 0) {
+                console.log(`Fish ${this.fishData.id} died from low health`);
+                this.node.destroy();
+            }
         }
     }
 
     public updateLastFedTime(time: number) {
         if (this.fishData) {
             this.fishData.lastFedTime = time;
+
+            // Update the database with new lastFedTime
+            if (this.fishData.id) {
+                databaseService.updateFish(this.fishData.id, { lastFedTime: time });
+            }
+        }
+    }
+
+    /**
+     * Update fish data without losing position or movement state
+     */
+    public updateFishData(newFishData: SavedFishType) {
+        if (this.fishData && newFishData.id === this.fishData.id) {
+            // Only update the data, preserve position and movement state
+            this.fishData.health = newFishData.health;
+            this.fishData.lastFedTime = newFishData.lastFedTime;
+            this.fishData.type = newFishData.type;
+            this.fishData.ownerId = newFishData.ownerId;
+
+            console.log(`Updated fish data for fish ${this.fishData.id} without losing state`);
         }
     }
 
     setTarget(pos: Vec3) {
+        // Stop any current movement tween to allow immediate response to food
+        if (this.moveTween) {
+            this.moveTween.stop();
+            this.moveTween = null;
+        }
+
         this.targetPos = pos;
     }
 

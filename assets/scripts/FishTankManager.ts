@@ -2,6 +2,7 @@ import { _decorator, Component, Node, input, Input, EventTouch, Camera, Vec3, UI
 import { FishTank } from './FishTank';
 import { FishManager } from './FishManager';
 import { FishFoodManager } from './FishFoodManager';
+import { PlayerManager } from './PlayerManager';
 import databaseService, { SavedFishType } from './firebase/database-service';
 import authService from './firebase/auth-service';
 import { FISH_LIST } from './FishData';
@@ -20,6 +21,9 @@ export class FishTankManager extends Component {
 
     @property(FishFoodManager)
     fishFoodManager: FishFoodManager | null = null;
+
+    @property(PlayerManager)
+    playerManager: PlayerManager | null = null;
 
     @property
     autoLoadFish: boolean = true;
@@ -84,6 +88,9 @@ export class FishTankManager extends Component {
         }
         this.spawnDefaultFish();
 
+        // Initialize player system
+        this.initializePlayerSystem();
+
         // Listen for mouse/touch clicks
         input.on(Input.EventType.TOUCH_END, this.onClickEnd, this);
     }
@@ -109,7 +116,7 @@ export class FishTankManager extends Component {
     }
 
     /**
-     * Handle real-time fish data updates
+     * Handle real-time fish data updates - preserves fish positions
      */
     private handleFishDataUpdate(fishData: SavedFishType[] | null) {
         if (!this.fishTank) {
@@ -124,15 +131,18 @@ export class FishTankManager extends Component {
 
         if (fishData && fishData.length > 0) {
             console.log(`Received ${fishData.length} fish from real-time update`);
-            this.fishTank.spawnFishFromData(fishData, this.fishManager);
+            // Use updateFishFromData instead of spawnFishFromData to preserve positions
+            this.fishTank.updateFishFromData(fishData, this.fishManager);
         } else {
             console.log('No fish data received from real-time update');
+            // Clear all fish when no data is received
+            this.fishTank.clearAllFish();
             // Optionally spawn default fish for testing
             this.spawnDefaultFish();
         }
     }
 
-    public async loadFishFromDatabase() {
+    public async loadFishFromDatabase(preserveExisting: boolean = false) {
         if (!this.fishTank) {
             console.error('FishTank component not assigned to FishTankManager');
             return;
@@ -148,7 +158,13 @@ export class FishTankManager extends Component {
 
             if (savedFish && savedFish.length > 0) {
                 console.log(`Loading ${savedFish.length} fish from database`);
-                this.fishTank.spawnFishFromData(savedFish, this.fishManager);
+                if (preserveExisting) {
+                    // Use updateFishFromData to preserve existing fish positions
+                    this.fishTank.updateFishFromData(savedFish, this.fishManager);
+                } else {
+                    // Use spawnFishFromData for complete replacement (default behavior)
+                    this.fishTank.spawnFishFromData(savedFish, this.fishManager);
+                }
             } else {
                 console.log('No saved fish found in database');
                 // Optionally spawn some default fish for testing
@@ -178,6 +194,66 @@ export class FishTankManager extends Component {
 
         this.fishTank.spawnFishFromData(defaultFish, this.fishManager);
         console.log('Spawned default fish for testing');
+    }
+
+    // ==================== PLAYER SYSTEM METHODS ====================
+
+    /**
+     * Initialize the player system
+     */
+    private async initializePlayerSystem() {
+        if (!this.fishTank) {
+            console.error('FishTank component not assigned, cannot initialize player system');
+            return;
+        }
+
+        if (!this.playerManager) {
+            console.error('PlayerManager component not assigned, cannot initialize player system');
+            return;
+        }
+
+        try {
+            // Spawn current user's player
+            await this.fishTank.spawnCurrentUserPlayer(this.playerManager);
+            console.log('Player system initialized successfully');
+        } catch (error) {
+            console.error('Error initializing player system:', error);
+        }
+    }
+
+    /**
+     * Refresh player positions (useful for manual updates)
+     */
+    public async refreshPlayers() {
+        if (!this.fishTank) {
+            console.error('FishTank component not assigned');
+            return;
+        }
+
+        if (!this.playerManager) {
+            console.error('PlayerManager component not assigned');
+            return;
+        }
+
+        try {
+            console.log('Players refreshed successfully');
+        } catch (error) {
+            console.error('Error refreshing players:', error);
+        }
+    }
+
+    /**
+     * Get current user's player
+     */
+    public getCurrentUserPlayer() {
+        return this.fishTank ? this.fishTank.getCurrentUserPlayer() : null;
+    }
+
+    /**
+     * Get number of active players
+     */
+    public getPlayerCount(): number {
+        return this.fishTank ? this.fishTank.getPlayerCount() : 0;
     }
 
     public refreshFishTank() {
