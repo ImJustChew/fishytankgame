@@ -129,7 +129,9 @@ export class StartButtonController extends Component {
      */
     public setButtonEnabled(enabled: boolean) {
         this.setButtonState(enabled);
-    } onDestroy() {
+    } 
+    
+    onDestroy() {
         // Clean up event listeners
         if (this.startButton && this.startButton.node) {
             this.startButton.node.off(Button.EventType.CLICK, this.onStartButtonClick, this);

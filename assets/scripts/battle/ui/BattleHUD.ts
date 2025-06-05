@@ -142,7 +142,7 @@ export class BattleHUD extends Component {
         if (this.newBattleButton) {
             this.newBattleButton.node.on(Button.EventType.CLICK, this.onNewBattleClicked, this);
         }
-        
+
         if (this.debugToggleButton) {
             this.debugToggleButton.node.on(Button.EventType.CLICK, this.onDebugToggleClicked, this);
         }
@@ -354,7 +354,7 @@ export class BattleHUD extends Component {
         if (battleSceneManager) {
             // Call the toggle debug method
             battleSceneManager.toggleHitboxDebug();
-            
+
             // Update button text if it has a label child
             const buttonLabel = this.debugToggleButton.getComponentInChildren(Label);
             if (buttonLabel) {

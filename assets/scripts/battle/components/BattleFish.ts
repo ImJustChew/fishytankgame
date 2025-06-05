@@ -669,7 +669,7 @@ export class BattleFish extends Fish {
         const position = this.node.getPosition();
         let width = 40;  // Default size
         let height = 20;
-        
+
         // Get actual size from UITransform if available
         const transform = this.node.getComponent(UITransform);
         if (transform) {
@@ -681,14 +681,14 @@ export class BattleFish extends Fish {
         const scale = this.node.getScale();
         width *= Math.abs(scale.x);
         height *= Math.abs(scale.y);
-        
+
         // Scale down the actual hitbox to be more precise (75% of visual size)
         width *= 0.75;
         height *= 0.75;
-        
+
         return { position, width, height };
     }
-    
+
     /**
      * Check if this fish's hitbox collides with another fish's hitbox
      * @param otherFish The fish to check collision with
@@ -697,18 +697,18 @@ export class BattleFish extends Fish {
     public collidesWithFish(otherFish: BattleFish): boolean {
         const myHitbox = this.getHitbox();
         const otherHitbox = otherFish.getHitbox();
-        
+
         // Calculate hitbox boundaries
         const myLeft = myHitbox.position.x - myHitbox.width / 2;
         const myRight = myHitbox.position.x + myHitbox.width / 2;
         const myTop = myHitbox.position.y + myHitbox.height / 2;
         const myBottom = myHitbox.position.y - myHitbox.height / 2;
-        
+
         const otherLeft = otherHitbox.position.x - otherHitbox.width / 2;
         const otherRight = otherHitbox.position.x + otherHitbox.width / 2;
         const otherTop = otherHitbox.position.y + otherHitbox.height / 2;
         const otherBottom = otherHitbox.position.y - otherHitbox.height / 2;
-        
+
         // Check for overlap
         return !(
             myRight < otherLeft ||
@@ -717,7 +717,7 @@ export class BattleFish extends Fish {
             myTop < otherBottom
         );
     }
-    
+
     /**
      * Check if this fish is within attack range of another fish,
      * considering both distance and direction
@@ -729,54 +729,54 @@ export class BattleFish extends Fish {
         const myPos = this.node.getPosition();
         const targetPos = otherFish.node.getPosition();
         const distance = Vec3.distance(myPos, targetPos);
-        
+
         // If not even in the maximum range, return false quickly
         if (distance > this.battleRange * 1.5) {
             return false;
         }
-        
+
         // For very close fish, they're definitely in range
         if (distance < this.battleRange * 0.5) {
             return true;
         }
-        
+
         // For fish that are in the borderline range, do a more precise check
         // Direction matters - fish need to be facing their target to attack
         const direction = new Vec3();
         Vec3.subtract(direction, targetPos, myPos);
         direction.normalize();
-        
+
         // Check if the fish is generally facing the target
         const isFacingRight = this.node.scale.x > 0;
         const targetIsToRight = direction.x > 0;
-        
+
         // If the fish isn't even facing the target, they're not in attack range
         if (isFacingRight !== targetIsToRight) {
             return false;
         }
-        
+
         // If within range and facing the target, they're in attack range
         return distance <= this.battleRange;
     }
-    
+
     // Attack cooldown tracking
     private attackCooldown: number = 0;
     private attackCooldownTime: number = 1000; // 1 second between attacks by default
-    
+
     /**
      * Check if the fish can attack (cooldown expired)
      */
     public canAttack(): boolean {
         return Date.now() - this.attackCooldown >= this.attackCooldownTime;
     }
-    
+
     /**
      * Reset attack cooldown after an attack
      */
     public resetAttackCooldown(): void {
         this.attackCooldown = Date.now();
     }
-    
+
     /**
      * Perform an attack on the target
      * This should set up animations and effects, but damage is applied separately
@@ -784,24 +784,24 @@ export class BattleFish extends Fish {
     public performAttack(target: BattleFish): void {
         // Reset attack cooldown
         this.resetAttackCooldown();
-        
+
         // Add attack animation or effects here
         this.flashAttackEffect();
     }
-    
+
     /**
      * Create a quick flash effect for attacking
      */
     private flashAttackEffect(): void {
         const sprite = this.getComponent(Sprite);
         if (!sprite) return;
-        
+
         // Store original color
         const originalColor = sprite.color.clone();
-        
+
         // Flash yellow
         sprite.color = new Color(255, 255, 150, 255);
-        
+
         // Reset after a short time
         this.scheduleOnce(() => {
             if (sprite.isValid) {
@@ -809,20 +809,20 @@ export class BattleFish extends Fish {
             }
         }, 0.1);
     }
-    
+
     /**
      * Create a quick flash effect when taking damage
      */
     private flashDamageEffect(): void {
         const sprite = this.getComponent(Sprite);
         if (!sprite) return;
-        
+
         // Store original color
         const originalColor = sprite.color.clone();
-        
+
         // Flash red
         sprite.color = new Color(255, 100, 100, 255);
-        
+
         // Reset after a short time
         this.scheduleOnce(() => {
             if (sprite.isValid) {
@@ -836,33 +836,33 @@ export class BattleFish extends Fish {
      */
     private startRetreat(): void {
         if (!this.battleTarget || !this.battleData) return;
-        
+
         // Mark as retreating
         this.isRetreating = true;
-        
+
         // Calculate retreat direction (away from target)
         const myPos = this.node.getPosition();
         const targetPos = this.battleTarget.node.getPosition();
-        
+
         const retreatDirection = new Vec3();
         Vec3.subtract(retreatDirection, myPos, targetPos);
         retreatDirection.normalize();
-        
+
         // Calculate retreat target position
         const retreatTarget = new Vec3();
         Vec3.scaleAndAdd(retreatTarget, myPos, retreatDirection, this.retreatDistance);
-        
+
         // Get tank bounds and clamp retreat position
         const tankBounds = this.getTankBounds();
         if (tankBounds) {
             retreatTarget.x = math.clamp(retreatTarget.x, tankBounds.min.x, tankBounds.max.x);
             retreatTarget.y = math.clamp(retreatTarget.y, tankBounds.min.y, tankBounds.max.y);
         }
-        
+
         // Move to retreat position
         this.moveToRetreatPosition(retreatTarget);
     }
-    
+
     /**
      * Move to retreat position
      */
@@ -870,18 +870,18 @@ export class BattleFish extends Fish {
         if (this.combatTween) {
             this.combatTween.stop();
         }
-        
+
         const currentPos = this.node.getPosition();
         const distance = Vec3.distance(currentPos, targetPos);
-        
+
         // Use faster speed for retreating
         const retreatSpeed = this.battleSpeed * 1.5;
         const duration = Math.max(0.3, distance / retreatSpeed);
-        
+
         // Update sprite direction
         const direction = new Vec3();
         Vec3.subtract(direction, targetPos, currentPos);
-        
+
         // Access sprite through the parent class's getComponent method
         const sprite = this.getComponent(Sprite);
         if (sprite) {
@@ -889,7 +889,7 @@ export class BattleFish extends Fish {
                 direction.x > 0 : direction.x < 0;
             this.node.setScale(shouldFlip ? -1 : 1, 1, 1);
         }
-        
+
         this.combatTween = tween(this.node)
             .to(duration, { position: targetPos })
             .call(() => {
@@ -901,7 +901,7 @@ export class BattleFish extends Fish {
                 this.combatTween = null;
             })
             .start();
-    }    onDestroy() {
+    } onDestroy() {
         if (this.combatTween) {
             this.combatTween.stop();
         }
@@ -920,37 +920,37 @@ export class BattleFish extends Fish {
             this.node.addChild(debugNode);
             debugNode.addComponent(Graphics);
         }
-        
+
         const hitbox = this.getHitbox();
         const graphics = debugNode.getComponent(Graphics);
-        
+
         if (!graphics) return;
-        
+
         // Clear previous drawing
         graphics.clear();
-        
+
         // Set outline style
         const isPlayer = this.getOwner() === 'player';
         graphics.strokeColor = isPlayer ? new Color(0, 255, 0, 255) : new Color(255, 0, 0, 255);
         graphics.lineWidth = 2;
-        
+
         // Calculate rect position relative to the fish node
         const width = hitbox.width;
         const height = hitbox.height;
-        
+
         // Draw rectangle outline (centered on the fish)
-        graphics.rect(-width/2, -height/2, width, height);
+        graphics.rect(-width / 2, -height / 2, width, height);
         graphics.stroke();
-        
+
         // If we have a target, draw a line to it
         if (this.battleTarget && this.battleTarget.isAlive()) {
             const targetPos = this.battleTarget.node.getPosition();
             const myPos = this.node.getPosition();
-            
+
             // Calculate relative position
             const relativeX = targetPos.x - myPos.x;
             const relativeY = targetPos.y - myPos.y;
-            
+
             // Draw line to target
             graphics.moveTo(0, 0);
             graphics.lineTo(relativeX, relativeY);
@@ -962,24 +962,24 @@ export class BattleFish extends Fish {
      */
     public getCollidingFish(): BattleFish[] {
         const collidingFish: BattleFish[] = [];
-        
+
         // Check collisions with enemy fish
         this.enemyFish.forEach(enemy => {
             if (this.collidesWithFish(enemy)) {
                 collidingFish.push(enemy);
             }
         });
-        
+
         // Also check collisions with ally fish
         this.allyFish.forEach(ally => {
             if (this.collidesWithFish(ally)) {
                 collidingFish.push(ally);
             }
         });
-        
+
         return collidingFish;
     }
-    
+
     /**
      * Run a debug test to log all colliding fish
      * Call this function from the console for debugging

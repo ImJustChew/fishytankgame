@@ -50,8 +50,8 @@ export class BattleSceneManager extends Component {
     rewardDistribution: RewardDistribution = null!;
 
     @property(FishManager)
-    fishManager: FishManager = null!; 
-    
+    fishManager: FishManager = null!;
+
     private currentPhase: BattlePhase = BattlePhase.MATCHMAKING;
     private matchmaker: BattleMatchmaker = null!;
     private battleStartTime: number = 0;
@@ -73,7 +73,7 @@ export class BattleSceneManager extends Component {
         // Start matchmaking
         await this.startMatchmaking();
     }
-    
+
     private setupComponentReferences() {
         // Connect FishManager to components that need fish sprites
         if (this.fishManager) {
@@ -100,9 +100,10 @@ export class BattleSceneManager extends Component {
         this.battleHUD.setVictoryConditions(this.victoryConditions);
     }
 
-    private async startMatchmaking() {        this.setPhase(BattlePhase.MATCHMAKING);
-        this.battleHUD.showMatchmakingUI(); 
-        
+    private async startMatchmaking() {
+        this.setPhase(BattlePhase.MATCHMAKING);
+        this.battleHUD.showMatchmakingUI();
+
         try {
             const matchResult = await this.matchmaker.findMatch();
             this.opponentId = matchResult.opponentId;
@@ -290,10 +291,10 @@ export class BattleSceneManager extends Component {
     private setPhase(phase: BattlePhase) {
         this.currentPhase = phase;
         console.log(`Battle phase changed to: ${phase}`);
-    }    public getCurrentPhase(): BattlePhase {
+    } public getCurrentPhase(): BattlePhase {
         return this.currentPhase;
     }
-    
+
     /**
      * Toggle hitbox visualization for debugging
      * This makes fish hitboxes visible to help diagnose collision issues
@@ -301,12 +302,12 @@ export class BattleSceneManager extends Component {
     public toggleHitboxDebug(): void {
         BattleFish.showHitboxes = !BattleFish.showHitboxes;
         console.log(`Hitbox debug mode: ${BattleFish.showHitboxes ? 'ON' : 'OFF'}`);
-        
+
         // Log all battle fish to check their hitboxes
         const allFish = this.battleTankManager.getAllBattleFish();
         console.log(`Toggling debug hitboxes for ${allFish.length} battle fish`);
     }
-    
+
     /**
      * Debug utility to test all fish collisions
      * Call this from the console for debugging
@@ -315,7 +316,7 @@ export class BattleSceneManager extends Component {
         console.log("Testing all fish collisions...");
         const allFish = this.battleTankManager.getAllBattleFish();
         let totalCollisions = 0;
-        
+
         allFish.forEach(fish => {
             const collisions = fish.getCollidingFish();
             if (collisions.length > 0) {
@@ -323,7 +324,7 @@ export class BattleSceneManager extends Component {
                 totalCollisions += collisions.length;
             }
         });
-        
+
         console.log(`Total collisions found: ${totalCollisions / 2}`);  // Divide by 2 since each collision is counted twice
     }
 }

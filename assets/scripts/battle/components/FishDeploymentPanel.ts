@@ -31,8 +31,8 @@ export class FishDeploymentPanel extends Component {
     @property(Prefab)
     fishSlotPrefab: Prefab = null!;
 
-    @property(Node)    dragPreview: Node = null!; 
-    
+    @property(Node) dragPreview: Node = null!;
+
     @property(FishManager)
     fishManager: FishManager | null = null;
 
@@ -53,8 +53,8 @@ export class FishDeploymentPanel extends Component {
         this.setupDragAndDrop();
         this.setupGlobalTouchHandler(); // Add global touch handling
         this.createDeploymentAreaBorder();        // No longer creating debug visuals
-    }    
-    
+    }
+
     // Debug visualizer method removed
     public setTankManager(tankManager: BattleTankManager): void {
         console.log("🏆 SETTING TANK MANAGER");
@@ -103,7 +103,7 @@ export class FishDeploymentPanel extends Component {
             visualizerManager.visualizeAllFish();
         }
     }
-    
+
     public setBattleSceneManager(sceneManager: IBattleSceneManager): void {
         console.log("🎮 SETTING BATTLE SCENE MANAGER");
         console.log(`Battle Scene Manager Valid: ${!!sceneManager}`);
@@ -116,7 +116,7 @@ export class FishDeploymentPanel extends Component {
 
         this.battleSceneManager = sceneManager;
     }
-    
+
     private async initializeFishSlots(): Promise<void> {
         // Get player's available fish for battle from database
         const availableFish = await this.getPlayerBattleFish();
@@ -163,7 +163,7 @@ export class FishDeploymentPanel extends Component {
             return this.getDefaultFish();
         }
     }
-    
+
     private getDefaultFish(): Array<{ id: string, count: number }> {
         // Fallback fish for testing/development
         return [
@@ -197,7 +197,7 @@ export class FishDeploymentPanel extends Component {
         // Setup touch events for this slot
         this.setupSlotTouchEvents(slotNode, fishId);
     }
-    
+
     private configureFishSlot(slotNode: Node, fishId: string, count: number): void {
         const fishData = FISH_LIST.find(f => f.id === fishId);
         if (!fishData) {
@@ -272,16 +272,17 @@ export class FishDeploymentPanel extends Component {
         if (countLabel) {
             countLabel.string = count.toString();
             countSet = true;
-            console.log(`Set count label to ${count} for ${fishId}`);        } else {
+            console.log(`Set count label to ${count} for ${fishId}`);
+        } else {
             console.warn(`Could not find count label for ${fishId}`);
-        }        
-          // Remove fish name display - only show count        
+        }
+        // Remove fish name display - only show count        
         const nameLabel = this.findLabelInNode(slotNode, 'Name');
         if (nameLabel) {
             nameLabel.string = ''; // Clear the name label
             console.log(`Cleared name label for ${fishId}`);
-        }        
-        
+        }
+
         // If we have a FishSlot component on the prefab, use it
         const fishSlotComponent = slotNode.getComponent(FishSlot);
         if (fishSlotComponent) {
