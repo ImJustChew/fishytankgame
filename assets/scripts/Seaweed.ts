@@ -41,6 +41,8 @@ export class Seaweed extends Component {
     private disturbanceIntensity = 0; 
     private canTrigger = true; 
     private baseTime = 0;
+    private randomTimeOffset: number = 0;
+    private mousePreviousPos = new Vec2();
 
     onLoad() {
         this.states = this.segments.map(() => ({ 
@@ -49,6 +51,8 @@ export class Seaweed extends Component {
         }));
         input.on(Input.EventType.MOUSE_MOVE, this.onMouseMove, this);
         this.baseTime = performance.now();
+        this.randomTimeOffset = Math.random() * 1000; 
+        console.log(`Seaweed initialized with random time offset: ${this.randomTimeOffset}`);
     }
 
     onDestroy() {
@@ -78,9 +82,13 @@ export class Seaweed extends Component {
                 break;
             }
         }
+        const mouseMoveDist = Vec2.distance(this.mousePos, this.mousePreviousPos);
 
 
-        if (mouseCurrentlyNear && !this.isMouseNear && this.canTrigger) {
+        if (mouseCurrentlyNear && 
+            !this.isMouseNear && 
+            this.canTrigger &&
+            mouseMoveDist > 2) { 
             if(this.disturbanceIntensity <= 1.6)
                 if(this.disturbanceIntensity == 0) {
                     this.disturbanceIntensity += 0.8;
@@ -105,10 +113,10 @@ export class Seaweed extends Component {
         const currentTime = performance.now();
         
         for (let i = 0; i < this.segments.length; i++) {
-            const naturalTime = currentTime / 2000;
+            const naturalTime = (currentTime + this.randomTimeOffset) / 2000;
             const baseAmplitude = 8 + Math.sin(naturalTime + i) * 5;
             const naturalSway = Math.sin(naturalTime * 2 + i * 0.3) * baseAmplitude;
-            const disturbanceTime = currentTime / 1000; 
+            const disturbanceTime = (currentTime + this.randomTimeOffset) / 1000; 
             const disturbanceSway = Math.sin(disturbanceTime * this.disturbanceFrequency + i * 0.5) * this.disturbanceAmplitude;
             targetAngles[i] = naturalSway + disturbanceSway * this.disturbanceIntensity;
         }
@@ -138,5 +146,6 @@ export class Seaweed extends Component {
             currentPos = currentPos.add(new Vec3(offsetX, offsetY, 0));
             segment.setPosition(currentPos);
         }
+        this.mousePreviousPos.set(this.mousePos);
     }
 }
