@@ -3380,8 +3380,8 @@
     "damping": 0.3,
     "maxHorizontalOffset": 8,
     "mouseInfluenceRadius": 40,
-    "disturbanceAmplitude": 30,
-    "disturbanceFrequency": 3.5,
+    "disturbanceAmplitude": 20,
+    "disturbanceFrequency": 2.7,
     "recoverySpeed": 0.2,
     "_id": ""
   },
@@ -3398,6 +3398,7 @@
       "__id__": 0
     },
     "fileId": "c41/+ObWFCtaFDwtlzSE2q",
+    "instance": null,
     "targetOverrides": null
   }
 ]
