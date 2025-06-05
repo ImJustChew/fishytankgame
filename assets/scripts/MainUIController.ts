@@ -14,6 +14,7 @@ export class MainUIController extends Component {
 
     onLoad() {
         if (this.friendListButton) {
+            console.log('[MainUIController] Friend List Button found, setting up click listener.');
             this.friendListButton.node.on(Button.EventType.CLICK, this.onFriendListClicked, this);
         }
 
@@ -24,6 +25,7 @@ export class MainUIController extends Component {
 
 
     private onFriendListClicked() {
+        console.log('[MainUIController] Friend List Button clicked.');
         if (this.friendListPanel) {
             this.friendListPanel.show();
         }

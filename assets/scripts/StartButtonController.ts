@@ -108,7 +108,7 @@ export class StartButtonController extends Component {
 
         console.log('[StartButtonController] Starting game...');
 
-        director.loadScene('scene');
+        director.loadScene('aquarium');
     }
 
     /**
