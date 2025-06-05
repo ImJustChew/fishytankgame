@@ -65,7 +65,7 @@ export class CombatManager extends Component {
 
         // Update each fish's enemy and ally lists
         this.updateFishTargetLists(playerFish, opponentFish);
-        
+
         // Process player fish actions
         this.processFishActions(playerFish, opponentFish, true);
 
@@ -75,7 +75,7 @@ export class CombatManager extends Component {
         // Clean up dead fish
         this.cleanupDeadFish();
     }
-    
+
     /**
      * Update each fish's list of allies and enemies
      * This ensures fish only target fish from the opposing player
@@ -85,7 +85,7 @@ export class CombatManager extends Component {
         playerFish.forEach(fish => {
             fish.setEnemyAndAllyFish(opponentFish, playerFish.filter(f => f !== fish));
         });
-        
+
         // For opponent fish, player fish are enemies and other opponent fish are allies
         opponentFish.forEach(fish => {
             fish.setEnemyAndAllyFish(playerFish, opponentFish.filter(f => f !== fish));
@@ -149,7 +149,7 @@ export class CombatManager extends Component {
                 });
             }
         }
-    }    private findValidTarget(attacker: BattleFish, potentialTargets: BattleFish[]): BattleFish | null {
+    } private findValidTarget(attacker: BattleFish, potentialTargets: BattleFish[]): BattleFish | null {
         const attackerPos = attacker.node.getPosition();
         const attackRange = attacker.getAttackRange();
 
@@ -163,7 +163,7 @@ export class CombatManager extends Component {
 
             // First do a quick distance check to avoid unnecessary hitbox calculations
             const distance = Vec3.distance(attackerPos, target.node.getPosition());
-            
+
             // Only consider targets within the attack range
             if (distance <= attackRange && distance < closestDistance) {
                 // Use the new isTargetInAttackRange method for a more accurate check
