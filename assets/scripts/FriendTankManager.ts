@@ -137,24 +137,18 @@ export class FriendTankManager extends Component {
     }
     
     /**
-     * 更新朋友信息顯示
+     * Update friend information display
      */
     private updateFriendInfo() {
         if (this.friendData) {
-            // 更新朋友名稱
+            // Update friend name
             if (this.friendNameLabel) {
-                this.friendNameLabel.string = this.friendData.username || '朋友的魚缸';
-            }
-            
-            // 更新朋友頭像（如果有）
-            // 這裡需要根據你的頭像系統來實現
-            if (this.friendAvatarSprite && this.defaultAvatarSprite) {
-                this.friendAvatarSprite.spriteFrame = this.defaultAvatarSprite;
+                this.friendNameLabel.string = `${this.friendData.username || 'Friend'}'s Fish Tank`;
             }
         } else {
-            // 如果沒有朋友數據，顯示默認信息
+            // If no friend data, show default info
             if (this.friendNameLabel) {
-                this.friendNameLabel.string = '朋友的魚缸';
+                this.friendNameLabel.string = 'Friend\'s Fish Tank';
             }
         }
     }
@@ -240,6 +234,8 @@ export class FriendTankManager extends Component {
         }
     }
 }
+
+
 
 
 
