@@ -77,7 +77,11 @@ export class FriendItem extends Component {
         }
         
         if (this.moneyLabel) {
-            this.moneyLabel.string = `$${friendData.money || 0}`;
+            if (friendData.money >= 1e7) {
+                this.moneyLabel.string = `$${(friendData.money / 1e6).toFixed(2)}M`;
+            } else {
+                this.moneyLabel.string = `$${Math.floor(friendData.money)}`;
+            }
         }
         
         /*if (this.statusLabel) {
@@ -131,7 +135,7 @@ export class FriendItem extends Component {
             this.statusLabel.string = 'a new friend request';
             this.statusLabel.color = new Color(100, 255, 100, 255); // green
         } else if (hasStolen) {
-            this.statusLabel.string = 'this devil stole your fish!!!!';
+            this.statusLabel.string = 'this devil try to stole your fish!!!!';
             this.statusLabel.color = new Color(255, 100, 100, 255); // red
         } else {
             this.statusLabel.string = 'just a friendly guy :)';

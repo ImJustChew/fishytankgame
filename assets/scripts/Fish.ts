@@ -9,7 +9,7 @@ const { ccclass, property } = _decorator;
 @ccclass('Fish')
 export class Fish extends Component {
     @property
-    moveSpeed: number = 100;
+    moveSpeed: number = 60;
 
     @property
     changeDirectionInterval: number = 3;
