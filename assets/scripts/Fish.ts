@@ -295,26 +295,52 @@ export class Fish extends Component {
         }
     }
 
-    public updateHealth(health: number) {
-        if (this.fishData) {
-            // Update health first
-            this.fishData.health = this.fishData.health + health;
-
-            // Clamp health between 0 and maxHealth
-            const maxHealth = this.getMaxHealth();
-            this.fishData.health = Math.max(0, Math.min(this.fishData.health, maxHealth));
-
-            // Update the database with new health value
-            if (this.fishData.id) {
-                databaseService.updateFish(this.fishData.id, { health: this.fishData.health });
+    public updateHealth(amount: number): Promise<void> {
+        return new Promise((resolve, reject) => {
+            try {
+                // Get current fish data
+                const fishData = this.getFishData();
+                
+                // Check if fishData is null or undefined
+                if (!fishData) {
+                    console.error('Cannot update health: Fish data is null');
+                    resolve(); // Resolve anyway to prevent unhandled promise rejection
+                    return;
+                }
+                
+                // Update local health first
+                const newHealth = Math.max(0, Math.min(this.getMaxHealth(), fishData.health + amount));
+                fishData.health = newHealth;
+                
+                // Check if fishData.id exists
+                if (!fishData.id) {
+                    console.warn('Fish has no ID, cannot update health in database');
+                    resolve();
+                    return;
+                }
+                
+                // Try to update the fish in the database
+                // Check if databaseService exists and has updateFish method
+                if (databaseService && typeof databaseService.updateFish === 'function') {
+                    // Use updateFish method with health property
+                    databaseService.updateFish(fishData.id, { health: newHealth })
+                        .then(() => {
+                            console.log(`Updated fish ${fishData.id} health to ${newHealth}`);
+                            resolve();
+                        })
+                        .catch(error => {
+                            console.error('Error updating fish health:', error);
+                            resolve(); // Resolve anyway to prevent unhandled promise rejection
+                        });
+                } else {
+                    console.warn('databaseService.updateFish is not available, health updated locally only');
+                    resolve();
+                }
+            } catch (error) {
+                console.error('Error in updateHealth:', error);
+                resolve(); // Resolve instead of reject to prevent unhandled promise rejection
             }
-
-            // Destroy fish if health reaches 0
-            if (this.fishData.health <= 0) {
-                console.log(`Fish ${this.fishData.id} died from low health`);
-                this.node.destroy();
-            }
-        }
+        });
     }
 
     public updateLastFedTime(time: number) {

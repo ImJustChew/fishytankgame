@@ -2,6 +2,7 @@ import { database } from './firebase';
 import authService from './auth-service';
 import firebase from './firebase-compat.js';
 import { INITIAL_MONEY } from '../constants';
+import { TankLevel } from '../FishTankManager';
 
 export type UserAvatarCollection = {
     [avatarId: string]: {
@@ -33,6 +34,7 @@ export type UserData = {
         totalBattles: number;
         totalWins: number;
     };
+    tankLevel: number; // 魚缸等級 (1: Basic, 2: Premium, 3: Deluxe)
 }
 
 export type SavedFishType = {
@@ -45,9 +47,12 @@ export type SavedFishType = {
 
 class DatabaseService {
 
+    /**
+     * 獲取當前用戶數據
+     * @returns Promise<UserData | null>
+     */
     async getUserData(): Promise<UserData | null> {
         const user = authService.getCurrentUser();
-
         if (!user) {
             console.warn('Cannot get user data: No user is signed in');
             return null;
@@ -55,9 +60,18 @@ class DatabaseService {
 
         try {
             const snapshot = await database.ref(`users/${user.uid}`).once('value');
-            const data = snapshot.val();
-            console.log(`Retrieved user data for user ${user.uid}:`, data);
-            return data || null; // Return null if no data exists
+            const userData = snapshot.val();
+            
+            if (userData) {
+                // 確保返回的數據包含魚缸等級，如果不存在則設為默認值 1
+                if (userData.tankLevel === undefined) {
+                    userData.tankLevel = 1;
+                    // 可選：將默認值寫回數據庫
+                    await database.ref(`users/${user.uid}/tankLevel`).set(1);
+                }
+                return userData;
+            }
+            return null;
         } catch (error) {
             console.error('Error getting user data:', error);
             return null;
@@ -276,6 +290,7 @@ class DatabaseService {
             lastCollectionTime: Date.now(),
             lastOnline: Date.now(),
             friends: {},
+            tankLevel: 1, 
             playerPosition: {
                 x: 0,
                 y: 0,
@@ -803,7 +818,29 @@ class DatabaseService {
             console.error('Error deleting match request:', error);
         }
     }
+
+    /**
+     * 更新用戶的魚缸等級
+     * @param tankLevel 魚缸等級 (1: Basic, 2: Premium, 3: Deluxe)
+     * @returns Promise<void>
+     */
+    async updateUserTankLevel(tankLevel: number): Promise<void> {
+        const user = authService.getCurrentUser();
+        if (!user) {
+            console.warn('Cannot update tank level: No user is signed in');
+            return;
+        }
+
+        try {
+            await database.ref(`users/${user.uid}/tankLevel`).set(tankLevel);
+            console.log(`Updated user tank level to: ${tankLevel}`);
+        } catch (error) {
+            console.error('Error updating user tank level:', error);
+            throw error;
+        }
+    }
 }
 
+// 創建並導出 DatabaseService 的單例
 const databaseService = new DatabaseService();
 export default databaseService;

@@ -110,7 +110,7 @@ export const FISH_LIST: Fish[] = [
         attackRange: 130
     },
     {
-        id: "fish_0009",
+        id: "fish_009",
         name: "Verdant Darter",
         description: "Quick and curious, this green dart zips through currents like a leaf in the wind.",
         price: 35,
