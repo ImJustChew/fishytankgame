@@ -101,9 +101,8 @@ export class FishManager extends Component {
       startPosition: data.position
     });
     
-    // ✅ EMIT SCORE EVENT INSTEAD OF POINTS
-    EventManager.eventTarget.emit('add-score', data.points);
-    // Keep points for compatibility (if needed)
+    // ✅ EMIT BOTH EVENTS SEPARATELY (restored to original)
+    //EventManager.eventTarget.emit('add-score', data.points);
     EventManager.eventTarget.emit('add-points', data.points);
   }
 
@@ -191,7 +190,7 @@ export class FishManager extends Component {
         if (animation) {
           animation.stop();
         }
-        */
+          */
       }
     });
   }

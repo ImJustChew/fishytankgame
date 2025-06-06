@@ -154,7 +154,7 @@ export class FishTankManager extends Component {
         this.loadTankLevelFromDatabase();
 
         // Set up money listener
-        this.setupMoneyListener();
+        //this.setupMoneyListener();
         //this.spawnDefaultFish();
 
         // Initialize player system
@@ -364,6 +364,7 @@ export class FishTankManager extends Component {
     }
 
     private onClickEnd(event: EventTouch) {
+        console.log('Click detected in FishTankManager');
         if (this.friendListPanel && this.friendListPanel.node.active) {
             return;
         }
@@ -376,7 +377,7 @@ export class FishTankManager extends Component {
 
         const spawnLocation = this.fishTank.getComponent(UITransform)!.convertToNodeSpaceAR(
             new Vec3(touchPos.x, touchPos.y, 0));
-
+        console.log(currentFoodType);
         this.fishTank.spawnFishFood(currentFoodType, spawnLocation, this.fishFoodManager);
         console.log('Spawned default fish food for testing');
         console.log('Touch position:', touchPos);
@@ -449,13 +450,13 @@ export class FishTankManager extends Component {
         }
     }
 
-    private setupMoneyListener() {
+    /*private setupMoneyListener() {
         // 監聽金錢變化
         databaseService.onUserMoneyChanged((money) => {
             this.currentMoney = money;
             this.checkUpgradeAvailability();
         });
-    }
+    }*/
 
     private checkUpgradeAvailability() {
         // 如果金錢達到升級要求且魚缸等級未達最高，顯示升級按鈕
