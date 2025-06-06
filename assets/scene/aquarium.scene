@@ -6604,6 +6604,10 @@
       "__uuid__": "313f0e46-90d6-48f0-b8b8-cb3e1ec63591",
       "__expectedType__": "cc.AudioClip"
     },
+    "upgradeTankButton": null,
+    "upgradeTankLabel": null,
+    "tankLevelSprites": [],
+    "tankBackgroundSprite": null,
     "_id": "55ZonFLlNNfpBM1f+07ppA"
   },
   {
@@ -7713,7 +7717,7 @@
     "_prefab": null,
     "_lpos": {
       "__type__": "cc.Vec3",
-      "x": 337.348,
+      "x": 304.955,
       "y": 277.016,
       "z": 0
     },
@@ -7757,7 +7761,7 @@
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
-      "x": 1,
+      "x": 0.5,
       "y": 0.5
     },
     "_id": "2dEY1B1UhOJaare2iIpsYp"

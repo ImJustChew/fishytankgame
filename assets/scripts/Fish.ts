@@ -30,6 +30,13 @@ export class Fish extends Component {
     private sprite: Sprite | null = null;
     private targetPos: Vec3 | null = null;
 
+    // Anti-stuck mechanism
+    private lastBoundaryHitTime: number = 0;
+    private boundaryHitCooldown: number = 1.0; // 1 second cooldown between boundary reactions
+    private consecutiveBoundaryHits: number = 0;
+    private lastPosition: Vec3 = new Vec3();
+    private positionChangeThreshold: number = 5; // Minimum movement required to reset stuck detection
+
     // New properties for right-to-left movement
     private isGameFish: boolean = false; // Flag to distinguish game fish from tank fish
     private spawnTime: number = 0;
@@ -62,15 +69,15 @@ export class Fish extends Component {
         this.spawnX = spawnX;
         this.maxLifeTime = maxLifeTime;
         this.moveSpeed = speed;
-        
+
         // Set initial position
         this.node.setPosition(spawnX, spawnY, 0);
-        
+
         // Face left (moving leftward)
         if (this.sprite) {
             this.node.setScale(-1, 1, 1); // Flip horizontally to face left
         }
-        
+
         console.log(`Game fish spawned at (${spawnX}, ${spawnY}) with speed ${speed}`);
     }
 
@@ -83,9 +90,9 @@ export class Fish extends Component {
         const distance = this.moveSpeed * elapsedTime;
         const currentX = this.spawnX - distance; // Move leftward
         const position = this.node.position;
-        
+
         this.node.setPosition(currentX, position.y, position.z);
-        
+
         // Check if fish should be destroyed
         if (currentX <= -this.spawnX || elapsedTime > this.maxLifeTime) {
             console.log(`Game fish destroyed: currentX=${currentX}, elapsedTime=${elapsedTime}`);
@@ -99,7 +106,7 @@ export class Fish extends Component {
     private updateTankFishMovement(deltaTime: number) {
         const variation = this.changeDirectionInterval * 0.5;
         const randomInterval = this.changeDirectionInterval + (Math.random() - 0.5) * 2 * variation;
-        
+
         if (this.targetPos) {
             const currentPos = this.node.getPosition();
             const direction = new Vec3();
@@ -125,7 +132,13 @@ export class Fish extends Component {
 
         this.directionTimer += deltaTime;
 
-        if (!this.targetPos && (this.directionTimer >= randomInterval || this.isHittingBounds())) {
+        // Only check boundaries if enough time has passed since last direction change
+        // This prevents rapid direction changes when fish is near boundaries
+        const shouldCheckBoundary = !this.targetPos &&
+            (this.directionTimer >= randomInterval ||
+                (this.directionTimer >= 0.5 && this.isHittingBounds()));
+
+        if (shouldCheckBoundary) {
             this.changeDirection();
             this.directionTimer = 0;
         }
@@ -154,10 +167,10 @@ export class Fish extends Component {
         if (this.moveTween) {
             this.moveTween.stop();
         }
-        
+
         // Emit destroy event for FishManager to handle
         this.node.emit('fish-destroyed', this);
-        
+
         // Destroy the node
         this.node.destroy();
     }
@@ -176,6 +189,12 @@ export class Fish extends Component {
         }
 
         this.setRandomPosition();
+
+        // Initialize anti-stuck tracking
+        this.lastPosition.set(this.node.getPosition());
+        this.consecutiveBoundaryHits = 0;
+        this.lastBoundaryHitTime = 0;
+
         this.initializeMovement();
     }
 
@@ -200,8 +219,39 @@ export class Fish extends Component {
     }
 
     private changeDirection() {
-        // Generate random direction
-        const angle = Math.random() * Math.PI * 2;
+        if (!this.tankBounds) return;
+
+        const currentPos = this.node.getPosition();
+
+        // Check which boundaries we're close to and bias direction away from them
+        const margin = 30; // Larger margin for direction planning
+        const isNearLeft = currentPos.x <= this.tankBounds.min.x + margin;
+        const isNearRight = currentPos.x >= this.tankBounds.max.x - margin;
+        const isNearTop = currentPos.y >= this.tankBounds.max.y - margin;
+        const isNearBottom = currentPos.y <= this.tankBounds.min.y + margin;
+
+        let angle: number;
+
+        if (isNearLeft || isNearRight || isNearTop || isNearBottom) {
+            // If near any boundary, generate direction that points away from boundaries
+            const centerX = (this.tankBounds.min.x + this.tankBounds.max.x) / 2;
+            const centerY = (this.tankBounds.min.y + this.tankBounds.max.y) / 2;
+
+            // Calculate direction toward center
+            const toCenterX = centerX - currentPos.x;
+            const toCenterY = centerY - currentPos.y;
+            const centerAngle = Math.atan2(toCenterY, toCenterX);
+
+            // Add controlled randomness (smaller range when near boundaries)
+            const randomOffset = (Math.random() - 0.5) * Math.PI * 0.4; // ±36 degrees
+            angle = centerAngle + randomOffset;
+
+            console.log(`Fish near boundary, directing toward center. Position: (${currentPos.x.toFixed(1)}, ${currentPos.y.toFixed(1)})`);
+        } else {
+            // If not near boundaries, use normal random direction
+            angle = Math.random() * Math.PI * 2;
+        }
+
         this.currentDirection.set(
             Math.cos(angle),
             Math.sin(angle),
@@ -238,10 +288,17 @@ export class Fish extends Component {
             0
         );
 
-        // Check if target would be outside bounds and adjust direction if needed
+        // Use more generous padding to keep fish away from edges
+        const safePadding = 25; // Increased padding
+        const safeMinX = this.tankBounds.min.x + safePadding;
+        const safeMaxX = this.tankBounds.max.x - safePadding;
+        const safeMinY = this.tankBounds.min.y + safePadding;
+        const safeMaxY = this.tankBounds.max.y - safePadding;
+
+        // Check if target would be outside safe bounds and adjust direction if needed
         const wouldHitBounds = (
-            targetPos.x < this.tankBounds.min.x || targetPos.x > this.tankBounds.max.x ||
-            targetPos.y < this.tankBounds.min.y || targetPos.y > this.tankBounds.max.y
+            targetPos.x < safeMinX || targetPos.x > safeMaxX ||
+            targetPos.y < safeMinY || targetPos.y > safeMaxY
         );
 
         if (wouldHitBounds) {
@@ -255,7 +312,7 @@ export class Fish extends Component {
             const centerAngle = Math.atan2(toCenterY, toCenterX);
 
             // Add some randomness to avoid straight-line movement to center
-            const randomOffset = (Math.random() - 0.5) * Math.PI * 0.5; // ±45 degrees
+            const randomOffset = (Math.random() - 0.5) * Math.PI * 0.4; // Reduced randomness for better control
             const newAngle = centerAngle + randomOffset;
 
             this.currentDirection.set(
@@ -280,9 +337,9 @@ export class Fish extends Component {
             );
         }
 
-        // Clamp target position to tank bounds as final safety measure
-        targetPos.x = math.clamp(targetPos.x, this.tankBounds.min.x, this.tankBounds.max.x);
-        targetPos.y = math.clamp(targetPos.y, this.tankBounds.min.y, this.tankBounds.max.y);
+        // Clamp target position to safe bounds (not tank bounds)
+        targetPos.x = math.clamp(targetPos.x, safeMinX, safeMaxX);
+        targetPos.y = math.clamp(targetPos.y, safeMinY, safeMaxY);
 
         // Calculate movement duration based on speed (pixels per second)
         const distance = Vec3.distance(currentPos, targetPos);
@@ -338,14 +395,94 @@ export class Fish extends Component {
         if (!this.tankBounds) return false;
 
         const pos = this.node.getPosition();
-        const margin = 10; // Small margin to detect near-boundary
+        const margin = 15; // Slightly increased margin for better detection
 
-        return (
+        const isNearBoundary = (
             pos.x <= this.tankBounds.min.x + margin ||
             pos.x >= this.tankBounds.max.x - margin ||
             pos.y <= this.tankBounds.min.y + margin ||
             pos.y >= this.tankBounds.max.y - margin
         );
+
+        if (isNearBoundary) {
+            const currentTime = Date.now() / 1000; // Convert to seconds
+
+            // Check if enough time has passed since last boundary reaction
+            if (currentTime - this.lastBoundaryHitTime < this.boundaryHitCooldown) {
+                return false; // Ignore boundary hit if still in cooldown
+            }
+
+            // Check if fish has moved significantly since last position check
+            const hasMovedSignificantly = Vec3.distance(pos, this.lastPosition) > this.positionChangeThreshold;
+            if (!hasMovedSignificantly) {
+                this.consecutiveBoundaryHits++;
+
+                // If fish seems truly stuck, force a random teleport to center area
+                if (this.consecutiveBoundaryHits >= 3) {
+                    this.unstuckFish();
+                    return false;
+                }
+            } else {
+                this.consecutiveBoundaryHits = 0; // Reset counter if fish is moving
+            }
+
+            this.lastBoundaryHitTime = currentTime;
+            this.lastPosition.set(pos);
+            return true;
+        }
+
+        this.consecutiveBoundaryHits = 0; // Reset if not near boundary
+        return false;
+    }
+
+    /**
+     * Unstuck a fish that appears to be trapped at boundaries
+     * Moves the fish to a safe position away from edges
+     */
+    private unstuckFish(): void {
+        if (!this.tankBounds) return;
+
+        console.log(`Unsticking fish ${this.fishData?.id || 'unknown'} that was stuck at boundaries`);
+
+        // Calculate a safe position in the center area of the tank
+        const safeMargin = 50; // Stay away from edges
+        const safeMinX = this.tankBounds.min.x + safeMargin;
+        const safeMaxX = this.tankBounds.max.x - safeMargin;
+        const safeMinY = this.tankBounds.min.y + safeMargin;
+        const safeMaxY = this.tankBounds.max.y - safeMargin;
+
+        // Generate random position in safe area
+        const newX = math.lerp(safeMinX, safeMaxX, Math.random());
+        const newY = math.lerp(safeMinY, safeMaxY, Math.random());
+
+        // Move fish to new position
+        this.node.setPosition(newX, newY, 0);
+
+        // Generate new random direction
+        const angle = Math.random() * Math.PI * 2;
+        this.currentDirection.set(Math.cos(angle), Math.sin(angle), 0);
+
+        // Update sprite direction
+        if (this.sprite) {
+            const shouldFlip = this.flipSpriteHorizontally ?
+                this.currentDirection.x > 0 :
+                this.currentDirection.x < 0;
+            this.node.setScale(shouldFlip ? -1 : 1, 1, 1);
+        }
+
+        // Stop any current movement
+        if (this.moveTween) {
+            this.moveTween.stop();
+            this.moveTween = null;
+        }
+
+        // Reset stuck detection
+        this.consecutiveBoundaryHits = 0;
+        this.lastBoundaryHitTime = Date.now() / 1000;
+        this.lastPosition.set(this.node.getPosition());
+
+        // Start new movement
+        this.startMovement();
     }
 
     public getFishData(): SavedFishType | null {

@@ -128,7 +128,7 @@ export class ShopManager extends Component {
     const { id: typeId, price } = detail;
     if (this.money < price) {
       console.log(`Not enough money to buy ${typeId}`);
-      this.showWarning(`Insufficient funds! Need $${price}, current balance: $${this.money}`);
+      this.showWarning(`Insufficient funds! Need $${price}, current balance: ${this.money.toFixed(2)}`);
       
       // Play error sound for insufficient funds
       const audioManager = AudioManager.getInstance();
@@ -238,7 +238,9 @@ export class ShopManager extends Component {
 
   private updateBalanceDisplay() {
     if (this.balanceLabel) {
-      this.balanceLabel.string = `Balance: $${this.money}`;
+      // this.money 只顯示到小數點後 2 位
+
+      this.balanceLabel.string = `${this.money.toFixed(2)}`;
       
       // Change color based on balance amount
       if (this.money > 500) {

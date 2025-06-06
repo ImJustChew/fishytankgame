@@ -10,6 +10,7 @@ import {
 } from 'cc';
 import { EventManager } from './EventManager';
 import { FishConfig, FishType } from './types/index.d';
+import { CoinManager } from './CoinManager';
 const { ccclass, property } = _decorator;
 
 @ccclass('GameSceneManager')
@@ -20,8 +21,8 @@ export class GameSceneManager extends Component {
   public bulletValueLabel: Label = null;
   @property(Label)
   public timerLabel: Label = null;
-  @property(Label)
-  public scoreLabel: Label = null; // ✅ ADD SCORE LABEL
+  //@property(Label)
+  //public scoreLabel: Label = null;
   @property(Node)
   public popupModal: Node = null;
   @property(Label)
@@ -29,7 +30,7 @@ export class GameSceneManager extends Component {
 
   public bulletLevel: number = 3;
   public point: number = 0;
-  public score: number = 0; // ✅ ADD SCORE PROPERTY
+  public score: number = 0;
   
   // ✅ ADD TIMER SYSTEM
   public gameTime: number = 30; // 30 seconds
@@ -38,9 +39,9 @@ export class GameSceneManager extends Component {
   
   private _isTransition: boolean = false;
   private _tempPoint: Record<string, number> = { point: 0 };
-  private _tempScore: Record<string, number> = { score: 0 }; // ✅ ADD SCORE TRANSITION
+  private _tempScore: Record<string, number> = { score: 0 };
   private _tempTween: Tween = null;
-  private _scoreTween: Tween = null; // ✅ ADD SCORE TWEEN
+  private _scoreTween: Tween = null;
   private _cachedPoint: number = 0;
 
   // ✅ ADD CUSTOM PADDING FUNCTION
@@ -57,8 +58,8 @@ export class GameSceneManager extends Component {
     EventManager.eventTarget.on('init-game-scene', this.initGameScene, this);
     EventManager.eventTarget.on('update-point', this.updatePoint, this);
     EventManager.eventTarget.on('show-fire-fail', this.showFireFail, this);
-    EventManager.eventTarget.on('add-points', this.addPoints, this); // Handle point awards
-    EventManager.eventTarget.on('add-score', this.addScore, this); // ✅ ADD SCORE EVENT
+    EventManager.eventTarget.on('add-points', this.addPoints, this);
+    //EventManager.eventTarget.on('add-score', this.addScore, this);
 
     this.initGameScene();
   }
@@ -67,13 +68,24 @@ export class GameSceneManager extends Component {
     console.log('GameSceneManager initGameScene - Singleplayer Mode with Timer');
     
     // Initialize singleplayer game state
-    this.point = 0; // Start with 0 points
-    this.score = 0; // ✅ INITIALIZE SCORE
+    this.point = 0;
+    this.score = 0;
     this._cachedPoint = 0;
-    this.playerPointLabel.string = `${this.point}`;
-    this.scoreLabel.string = `Score: ${this.score}`; // ✅ INITIALIZE SCORE DISPLAY
-    this.bulletLevel = 3;
-    this.bulletValueLabel.string = `Level ${this.bulletLevel}`;
+    
+    if (this.playerPointLabel) {
+      this.playerPointLabel.string = `${this.point}`;
+    }
+    
+    /*
+    if (this.scoreLabel) {
+      this.scoreLabel.string = `Score: ${this.score}`;
+    }
+    */
+    
+    if (this.bulletValueLabel) {
+      this.bulletLevel = 3;
+      this.bulletValueLabel.string = `Level ${this.bulletLevel}`;
+    }
     
     // ✅ INITIALIZE TIMER
     this.remainingTime = this.gameTime;
@@ -95,12 +107,14 @@ export class GameSceneManager extends Component {
 
   // ✅ ADD TIMER SYSTEM
   startGameTimer() {
-    // Update timer every second
-    this.schedule(this.updateTimer, 1);
+    if (this.timerLabel) {
+      // Update timer every second
+      this.schedule(this.updateTimer, 1);
+    }
   }
 
   updateTimer() {
-    if (!this.isGameActive) return;
+    if (!this.isGameActive || !this.timerLabel) return;
     
     this.remainingTime--;
     this.updateTimerDisplay();
@@ -140,7 +154,6 @@ export class GameSceneManager extends Component {
     this.unschedule(this.updateTimer);
     this.unschedule(this.spawnFishes);
     
-    // ✅ STOP ALL FISH MOVEMENT
     EventManager.eventTarget.emit('stop-all-fish');
     
     // Disable shooting
@@ -151,12 +164,12 @@ export class GameSceneManager extends Component {
   }
 
   showTimeUpPopup() {
-    const finalScore = this.score; // ✅ USE SCORE INSTEAD OF POINTS
-    this.showPopupModal(`Time's Up！\nFinal Score: ${finalScore}`);
+    // ✅ SIMPLE VERSION - Show final point
+    this.showPopupModal(`Time's Up！\nFinal Point: ${this.point}`);
   }
 
   spawnFishes() {
-    if (!this.isGameActive) return; // Don't spawn fish when game is over
+    if (!this.isGameActive) return;
     
     const fishes = this.generateFishes(5);
     EventManager.eventTarget.emit('spawn-fishes', fishes);
@@ -190,16 +203,18 @@ export class GameSceneManager extends Component {
 
   protected update(dt: number): void {
     // 更新玩家的點數
-    if (this._isTransition) {
+    if (this._isTransition && this.playerPointLabel) {
       this.playerPointLabel.string = `${Math.floor(this._tempPoint.point)}`;
       this.point = Math.floor(this._tempPoint.point);
     }
     
+    /*
     // ✅ UPDATE SCORE DISPLAY
-    if (this._scoreTween && this._scoreTween.running) {
+    if (this._scoreTween && this._scoreTween.running && this.scoreLabel) {
       this.scoreLabel.string = `Score: ${Math.floor(this._tempScore.score)}`;
       this.score = Math.floor(this._tempScore.score);
     }
+      */
   }
 
   protected onDestroy(): void {
@@ -208,71 +223,78 @@ export class GameSceneManager extends Component {
     EventManager.eventTarget.off('update-point', this.updatePoint, this);
     EventManager.eventTarget.off('show-fire-fail', this.showFireFail, this);
     EventManager.eventTarget.off('add-points', this.addPoints, this);
-    EventManager.eventTarget.off('add-score', this.addScore, this); // ✅ UNREGISTER SCORE EVENT
+    //EventManager.eventTarget.off('add-score', this.addScore, this);
     
     // Unschedule all timers
     this.unschedule(this.spawnFishes);
     this.unschedule(this.updateTimer);
   }
 
-  // Add points to player score (keep for compatibility)
+  // ✅ SEPARATE POINTS AND SCORE HANDLING (restored to original)
   addPoints(points: number) {
-    if (!this.isGameActive) return; // Don't add points when game is over
+    if (!this.isGameActive) return;
     
     const newTotal = this.point + points;
     this.updatePoint(newTotal, true);
-    
-    // ✅ ALSO ADD TO SCORE
-    this.addScore(points);
   }
 
-  // ✅ ADD SCORE SYSTEM
   addScore(points: number) {
-    if (!this.isGameActive) return; // Don't add score when game is over
+    if (!this.isGameActive) return;
     
     const newScore = this.score + points;
     this.updateScore(newScore, true);
     console.log(`Score increased by ${points}! Total: ${newScore}`);
   }
 
-  // ✅ ADD SCORE UPDATE METHOD
   updateScore(newScore: number, animated: boolean = false) {
     if (this._scoreTween && this._scoreTween.running) {
       this._scoreTween.stop();
     }
     
-    if (animated) {
+    /*
+    if (animated && this.scoreLabel) {
       this._tempScore.score = this.score;
       this._scoreTween = tween(this._tempScore)
-        .delay(0.2) // Small delay for visual effect
+        .delay(0.2)
         .to(0.5, { score: newScore })
         .call(() => {
-          this.scoreLabel.string = `Score: ${newScore}`;
+          if (this.scoreLabel) {
+            this.scoreLabel.string = `Score: ${newScore}`;
+          }
           this.score = newScore;
           this._scoreTween = null;
         })
         .start();
     } else {
       this.score = newScore;
-      this.scoreLabel.string = `Score: ${newScore}`;
+      if (this.scoreLabel) {
+        this.scoreLabel.string = `Score: ${newScore}`;
+      }
     }
+    */
   }
 
-  // Simplified affordability check (always true during game time)
   checkAffordability() {
     EventManager.eventTarget.emit('switch-can-fire', this.isGameActive);
   }
 
   onClickClose() {
-    this.popupModal.active = false;
-    this.modalText.string = '';
+    if (this.popupModal) {
+      this.popupModal.active = false;
+    }
+    if (this.modalText) {
+      this.modalText.string = '';
+    }
   }
 
   onClickConfirm() {
-    this.popupModal.active = false;
-    this.modalText.string = '';
+    if (this.popupModal) {
+      this.popupModal.active = false;
+    }
+    if (this.modalText) {
+      this.modalText.string = '';
+    }
     
-    // Return to start scene after confirming time up
     if (!this.isGameActive) {
       this.onClickQuitRoom();
     }
@@ -280,9 +302,18 @@ export class GameSceneManager extends Component {
 
   onClickQuitRoom() {
     this.scheduleOnce(() => {
-      this.playerPointLabel.string = '';
-      this.scoreLabel.string = 'Score: 0'; // ✅ RESET SCORE DISPLAY
-      this.popupModal.active = false;
+      if (this.playerPointLabel) {
+        this.playerPointLabel.string = '';
+      }
+      /*
+      if (this.scoreLabel) {
+        this.scoreLabel.string = 'Score: 0';
+      }
+      */
+      if (this.popupModal) {
+        this.popupModal.active = false;
+      }
+      
       director.loadScene('01-start-scene', (err, scene) => {
         if (!err) {
           console.log('Returned to start scene');
@@ -296,6 +327,9 @@ export class GameSceneManager extends Component {
     if (this._tempTween && this._tempTween.running) {
       this._tempTween.stop();
     }
+    
+    if (!this.playerPointLabel) return;
+    
     this._isTransition = true;
     this._tempPoint.point = this.point;
     this._cachedPoint = currentPoint;
@@ -304,7 +338,9 @@ export class GameSceneManager extends Component {
       .to(0.3, { point: currentPoint })
       .call(() => {
         this._isTransition = false;
-        this.playerPointLabel.string = `${currentPoint}`;
+        if (this.playerPointLabel) {
+          this.playerPointLabel.string = `${currentPoint}`;
+        }
         this.point = currentPoint;
       })
       .start();
@@ -317,8 +353,12 @@ export class GameSceneManager extends Component {
   }
 
   showPopupModal(text: string) {
-    this.popupModal.active = true;
-    this.modalText.string = text;
+    if (this.popupModal) {
+      this.popupModal.active = true;
+    }
+    if (this.modalText) {
+      this.modalText.string = text;
+    }
   }
 
   // ✅ ADD RESTART GAME METHOD

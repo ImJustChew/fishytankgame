@@ -35,7 +35,7 @@ export class GameManager extends Component {
   loadGameScene(): void {
     console.log('Loading game scene');
     
-    director.loadScene('02-game-scene', (err, scene) => {
+    director.loadScene('minigame_bombfish', (err, scene) => {
       if (err) {
         console.error('Failed to load game scene:', err);
         return;
