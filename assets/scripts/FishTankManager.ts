@@ -526,4 +526,107 @@ export class FishTankManager extends Component {
             this.fishTank.maxFishFoodCount = 20 + (this.currentTankLevel - 1) * 10;
         }
     }
+
+    /**
+     * 初始化触摸事件监听
+     */
+    private initializeTouchEvents() {
+        // 确保移除之前的监听器，避免重复
+        input.off(Input.EventType.TOUCH_START, this.onTouchStart, this);
+        
+        // 添加新的触摸监听器
+        input.on(Input.EventType.TOUCH_START, this.onTouchStart, this);
+        console.log('[FishTankManager] Touch events initialized');
+    }
+
+    /**
+     * 处理触摸开始事件
+     */
+    private onTouchStart(event: EventTouch) {
+        // 调试信息
+        console.log('[FishTankManager] Touch detected');
+        
+        // 获取触摸位置
+        const touchPos = event.getUILocation();
+        console.log(`[FishTankManager] Touch position: x=${touchPos.x}, y=${touchPos.y}`);
+        
+        // 检查是否有鱼食管理器
+        if (!this.fishFoodManager) {
+            console.error('[FishTankManager] Cannot spawn food: FishFoodManager not assigned');
+            return;
+        }
+        
+        // 检查是否有鱼缸
+        if (!this.fishTank) {
+            console.error('[FishTankManager] Cannot spawn food: FishTank not assigned');
+            return;
+        }
+        
+        // 获取当前选择的鱼食类型
+        const currentFoodType = this.fishFoodManager.getSelectedFoodType();
+        if (!currentFoodType) {
+            console.warn('[FishTankManager] No fish food type selected');
+            return;
+        }
+        
+        // 将UI坐标转换为世界坐标
+        const camera = this.getComponent(Camera);
+        let spawnLocation;
+        
+        if (camera) {
+            // 如果有相机组件，使用相机转换坐标
+            spawnLocation = camera.screenToWorld(new Vec3(touchPos.x, touchPos.y, 0));
+        } else {
+            // 否则使用简单转换
+            const uiTransform = this.node.getComponent(UITransform);
+            if (uiTransform) {
+                spawnLocation = uiTransform.convertToNodeSpaceAR(new Vec3(touchPos.x, touchPos.y, 0));
+            } else {
+                spawnLocation = new Vec3(touchPos.x, touchPos.y, 0);
+            }
+        }
+        
+        console.log(`[FishTankManager] Spawn location: x=${spawnLocation.x}, y=${spawnLocation.y}`);
+        
+        // 生成鱼食
+        const food = this.fishTank.spawnFishFood(currentFoodType, spawnLocation, this.fishFoodManager);
+        
+        if (food) {
+            console.log(`[FishTankManager] Fish food spawned: ${currentFoodType.name}`);
+            
+            // 播放音效
+            if (this.fishFoodGenerationSound) {
+                const sfxNode = new Node('SFXAudioSource');
+                const sfx = sfxNode.addComponent(AudioSource);
+                sfx.clip = this.fishFoodGenerationSound;
+                sfx.volume = 1;
+                sfx.play();
+                this.node.addChild(sfxNode);
+                sfx.node.once(AudioSource.EventType.ENDED, () => {
+                    sfxNode.destroy();
+                });
+            }
+        } else {
+            console.warn('[FishTankManager] Failed to spawn fish food');
+        }
+    }
+
+    onLoad() {
+        // 其他初始化代码...
+        
+        // 初始化触摸事件
+        this.initializeTouchEvents();
+        
+        console.log('[FishTankManager] Initialized');
+    }
+
+    onDestroy() {
+        // 移除触摸事件监听
+        input.off(Input.EventType.TOUCH_START, this.onTouchStart, this);
+        
+        // 其他清理代码...
+        this.cleanup();
+        
+        console.log('[FishTankManager] Destroyed');
+    }
 }

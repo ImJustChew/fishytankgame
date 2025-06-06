@@ -21,6 +21,48 @@ export class FishFoodManager extends Component {
 
     start() {
         this.initializeSpriteMap();
+        // 默认选择第一种鱼食
+        this.selectDefaultFoodType();
+    }
+
+    /**
+     * 选择默认的鱼食类型（第一种）
+     */
+    private selectDefaultFoodType() {
+        if (FISH_FOOD_LIST.length > 0) {
+            this.selectedFoodType = FISH_FOOD_LIST[0];
+            console.log(`[FishFoodManager] Default food type selected: ${this.selectedFoodType.name}`);
+        } else {
+            console.warn('[FishFoodManager] No food types available');
+        }
+    }
+
+    /**
+     * 获取当前选择的鱼食类型
+     * @returns 当前选择的鱼食类型，如果没有选择则返回null
+     */
+    public getSelectedFoodType(): FishFoodType | null {
+        // 如果没有选择，返回默认的第一种鱼食
+        if (!this.selectedFoodType && FISH_FOOD_LIST.length > 0) {
+            this.selectDefaultFoodType();
+        }
+        return this.selectedFoodType;
+    }
+
+    /**
+     * 设置当前选择的鱼食类型
+     * @param foodTypeId 鱼食类型ID
+     * @returns 是否成功设置
+     */
+    public selectFoodType(foodTypeId: string): boolean {
+        const foodType = FISH_FOOD_LIST.find(food => food.id === foodTypeId);
+        if (foodType) {
+            this.selectedFoodType = foodType;
+            console.log(`[FishFoodManager] Food type selected: ${foodType.name}`);
+            return true;
+        }
+        console.warn(`[FishFoodManager] Food type not found: ${foodTypeId}`);
+        return false;
     }
 
     /**
