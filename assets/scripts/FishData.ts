@@ -129,6 +129,19 @@ export const FISH_LIST: Fish[] = [
         attackDamage: 100,
         attackSpeed: 120,
         attackRange: 150
+    },
+    {
+        id: "fish_010",
+        name: "Golden",
+        description: "A radiant symbol of boundless wealth! The GoldenFish glows with an aura of pure gold, said to be blessed by ancient ocean gods. Every flick of its fin multiplies riches like magic. Earns 1000 coins per second.",
+        price: 10000000,
+        health: 75,
+        moneyPerSecond: 10000.0, 
+        attackHP: 10000,
+        defenseHP: 9000,
+        attackDamage: 150,
+        attackSpeed: 130,
+        attackRange: 160
     }
     // Add more fish as needed
 ];
