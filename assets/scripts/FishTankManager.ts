@@ -8,6 +8,7 @@ import authService from './firebase/auth-service';
 import { FISH_LIST } from './FishData';
 import { FISH_FOOD_LIST } from './FishFoodData';
 import { FishFood } from './FishFood';
+import { FriendListPanel } from './FriendListPanel';
 
 const { ccclass, property } = _decorator;
 
@@ -33,6 +34,9 @@ export class FishTankManager extends Component {
 
     @property
     trackingRange: number = 400;
+
+    @property(FriendListPanel)
+    friendListPanel: FriendListPanel = null;
 
     update(deltaTime: number) {
         // check for collision of fish and food (eating) 
@@ -285,6 +289,9 @@ export class FishTankManager extends Component {
     }
 
     private onClickEnd(event: EventTouch) {
+        if (this.friendListPanel && this.friendListPanel.node.active) {
+            return;
+        }
         const currentFoodType = this.fishTank.getCurrentActiveFishFood();
         const touchPos = event.getUILocation();
         if (!touchPos) {

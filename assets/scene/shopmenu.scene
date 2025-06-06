@@ -1614,6 +1614,9 @@
     "warningLabel": {
       "__id__": 47
     },
+    "exitButton": {
+      "__id__": 34
+    },
     "warningDuration": 3,
     "_id": "3ehUgeRgtPx7K0ww5WKvbT"
   },
