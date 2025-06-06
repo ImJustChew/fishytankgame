@@ -1,4 +1,4 @@
-import { _decorator, Component, Node, Prefab, instantiate, ScrollView, Button, director, Label, EditBox, Color } from 'cc';
+import { _decorator, Component, Node, Prefab, instantiate, ScrollView, Button, director, Label, EditBox, Color, AudioClip, AudioSource } from 'cc';
 import socialService, { FriendData, StealAttempt } from './firebase/social-service';
 import { FriendItem } from './FriendItem';
 import { UITransform } from 'cc';
@@ -41,11 +41,16 @@ export class FriendListPanel extends Component {
     @property(Label)
     displayEditBoxLabel: Label = null;
 
+    @property(AudioClip)
+    clickButtonSound: AudioClip = null;
+
     private friendItems: FriendItem[] = [];
     private stealHistory: { incoming: StealAttempt[]; outgoing: StealAttempt[] } = { incoming: [], outgoing: [] };
 
     private removeMode: boolean = false; // whether remove button is enabled
     private isAddFriendPanelVisible: boolean = false;
+
+    private musicAudioSource: AudioSource | null = null;
 
     onLoad() {
         if (this.closeButton) {
@@ -78,6 +83,9 @@ export class FriendListPanel extends Component {
         this.adjustContentHeight();
         this.addFriendPanel.active = false;
         this.isAddFriendPanelVisible = false;
+        if (!this.musicAudioSource) {
+            this.musicAudioSource = this.node.getComponent(AudioSource);
+        }
     }
 
 
@@ -187,6 +195,9 @@ export class FriendListPanel extends Component {
 
 
     private onCloseClicked() {
+        if (this.musicAudioSource && this.clickButtonSound) {
+                this.musicAudioSource.playOneShot(this.clickButtonSound);
+        }
         if (this.removeMode) {
             this.toggleRemoveMode();
         }
@@ -236,6 +247,9 @@ export class FriendListPanel extends Component {
 
 
     private toggleRemoveMode() {
+        if (this.musicAudioSource && this.clickButtonSound) {
+            this.musicAudioSource.playOneShot(this.clickButtonSound);
+        }
         this.removeMode = !this.removeMode;
         this.friendItems.forEach(item => {
             item.toggleRemoveButton(this.removeMode);
@@ -305,8 +319,9 @@ export class FriendListPanel extends Component {
     }
 
     private toggleAddFriendPanel() {
-        console.log("toggleAddFriendPanel called, current state:", this.isAddFriendPanelVisible);
-        
+        if (this.musicAudioSource && this.clickButtonSound) {
+            this.musicAudioSource.playOneShot(this.clickButtonSound);
+        }
         this.isAddFriendPanelVisible = !this.isAddFriendPanelVisible;
         
         if (!this.addFriendPanel) {
@@ -341,14 +356,17 @@ export class FriendListPanel extends Component {
 
 
     private async onSendRequest() {
-        console.log("onSendRequest called");
-        
-        if (!this.addFriendEditBox) {
-            console.error("Add friend edit box is not assigned!");
+        if (!this.addFriendEditBox) return;
+        if (this.musicAudioSource && this.clickButtonSound) {
+            this.musicAudioSource.playOneShot(this.clickButtonSound);
+        }
+        let identifier = this.addFriendEditBox.string.trim();
+        if (!identifier) {
+            this.showNotification('Please enter something', false);
             return;
         }
         
-        const identifier = this.addFriendEditBox.string.trim();
+        identifier = this.addFriendEditBox.string.trim();
         console.log("Friend identifier entered:", identifier);
         
         if (!identifier) {

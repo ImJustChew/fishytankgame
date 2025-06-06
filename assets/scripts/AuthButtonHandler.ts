@@ -1,4 +1,4 @@
-import { _decorator, Component, Button, Node, Label, director } from 'cc';
+import { _decorator, Component, Button, Node, Label, director, AudioClip, AudioSource } from 'cc';
 import authService from './firebase/auth-service';
 import databaseService, { UserData } from './firebase/database-service';
 import { UsernameDialog } from './UsernameDialog';
@@ -33,6 +33,9 @@ export class AuthButtonHandler extends Component {
     })
     private usernameLabel: Label | null = null;
 
+    @property(AudioClip)
+    clickButtonSound: AudioClip = null;
+
     @property({
         type: Node,
         tooltip: 'Container for sign-in UI elements'
@@ -49,6 +52,7 @@ export class AuthButtonHandler extends Component {
         type: UsernameDialog,
         tooltip: 'Dialog for username selection'
     })
+
     private usernameDialog: UsernameDialog | null = null;
 
     private authStateUnsubscribe: firebase.Unsubscribe | null = null;
@@ -172,6 +176,17 @@ export class AuthButtonHandler extends Component {
      * Handle the sign-in button click
      */
     private async handleSignIn() {
+        if (this.clickButtonSound) {
+            const sfxNode = new Node('SFXAudioSource');
+            const sfx = sfxNode.addComponent(AudioSource);
+            sfx.clip = this.clickButtonSound;
+            sfx.volume = 0.6;
+            sfx.play();
+            this.node.addChild(sfxNode);
+            sfx.node.once(AudioSource.EventType.ENDED, () => {
+                sfxNode.destroy();
+            });
+        }
         try {
             console.log('[AuthButtonHandler] Attempting to sign in with Google...');
             const userCredential = await authService.signInWithGoogle();
@@ -187,6 +202,17 @@ export class AuthButtonHandler extends Component {
      * Handle the sign-out button click
      */
     private async handleSignOut() {
+        if (this.clickButtonSound) {
+            const sfxNode = new Node('SFXAudioSource');
+            const sfx = sfxNode.addComponent(AudioSource);
+            sfx.clip = this.clickButtonSound;
+            sfx.volume = 0.6;
+            sfx.play();
+            this.node.addChild(sfxNode);
+            sfx.node.once(AudioSource.EventType.ENDED, () => {
+                sfxNode.destroy();
+            });
+        }
         try {
             console.log('[AuthButtonHandler] Signing out...');
             await authService.signOut();

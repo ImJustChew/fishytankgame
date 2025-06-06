@@ -1,4 +1,4 @@
-import { _decorator, Component, Node, Button, director } from 'cc';
+import { _decorator, Component, Node, Button, director, AudioClip, AudioSource } from 'cc';
 import { FriendListPanel } from './FriendListPanel';
 
 const { ccclass, property } = _decorator;
@@ -17,6 +17,14 @@ export class MainUIController extends Component {
     
     @property(FriendListPanel)
     friendListPanel: FriendListPanel = null;
+
+    @property(AudioClip)
+    clickButtonSound: AudioClip = null;
+
+    @property(Node)
+    TankBGMNode: Node = null;
+
+    private musicAudioSource: AudioSource | null = null;
 
     onLoad() {
         if (this.friendListButton) {
@@ -37,10 +45,20 @@ export class MainUIController extends Component {
         }
     }
 
+    start() {
+        if (!this.musicAudioSource) {
+            this.musicAudioSource = this.node.getComponent(AudioSource);
+        }
+        this.TankBGMNode = director.getScene().getChildByName('TankBGMController');
+    }
+
 
     private onFriendListClicked() {
         console.log('[MainUIController] Friend List Button clicked.');
         if (!this.friendListPanel.node.active) {
+            if (this.musicAudioSource && this.clickButtonSound) {
+                this.musicAudioSource.playOneShot(this.clickButtonSound);
+            }
             if (this.friendListPanel) {
                 this.friendListPanel.show();
             }
@@ -50,15 +68,26 @@ export class MainUIController extends Component {
 
     private onExitClicked() {
         if (!this.friendListPanel.node.active) {
+            if (this.musicAudioSource && this.clickButtonSound) {
+                this.musicAudioSource.playOneShot(this.clickButtonSound);
+            }
+            director.removePersistRootNode(this.TankBGMNode);
             console.log('[MainUIController] Exit Button clicked.');
-            director.loadScene('mainmenu');
+            setTimeout(() => {
+                director.loadScene('mainmenu');
+            }, 200);
         }
     }
 
     private onShopClicked() {
         if (!this.friendListPanel.node.active) {
+            if (this.musicAudioSource && this.clickButtonSound) {
+                this.musicAudioSource.playOneShot(this.clickButtonSound);
+            }
             console.log('[MainUIController] Shop Button clicked.');
-            director.loadScene('shopmenu');
+            setTimeout(() => {
+                director.loadScene('shopmenu');
+            }, 150);
         }
     }
 
