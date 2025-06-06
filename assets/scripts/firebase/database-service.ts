@@ -93,7 +93,7 @@ class DatabaseService {
             console.error('Error setting user data:', error);
         }
     }
-    
+
     /**
      * Update a specific field in the user data
      * @param field The field name to update
@@ -110,7 +110,7 @@ class DatabaseService {
         try {
             const updates: Partial<Record<keyof UserData, any>> = {};
             updates[field] = value;
-            
+
             await database.ref(`users/${user.uid}`).update(updates);
             console.log(`User field ${field} updated for user ${user.uid}:`, value);
         } catch (error) {
@@ -894,6 +894,19 @@ class DatabaseService {
             console.error('Error updating user tank level:', error);
             throw error;
         }
+    }
+
+    /**
+     * Get Firebase database reference for the current user
+     * Used for atomic operations like transactions
+     */
+    getUserReference(): firebase.database.Reference | null {
+        const user = authService.getCurrentUser();
+        if (!user) {
+            console.warn('Cannot get user reference: No user is signed in');
+            return null;
+        }
+        return database.ref(`users/${user.uid}`);
     }
 }
 

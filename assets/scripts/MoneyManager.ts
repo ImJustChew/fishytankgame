@@ -32,7 +32,7 @@ export class MoneyManager extends Component {
     private updateTimer: number = 0;
     private unsubscribeFishListener: (() => void) | null = null;
     private unsubscribeUserDataListener: (() => void) | null = null;
-    private unsubscribeAuthListener: (() => void) | null = null;    private isUserLoggedIn: boolean = false;
+    private unsubscribeAuthListener: (() => void) | null = null; private isUserLoggedIn: boolean = false;
     private originalMoneyColor: Color = new Color(255, 255, 255, 255);
     private highlightMoneyColor: Color = new Color(255, 255, 0, 255); // Yellow highlight
     private originalMoneyScale: Vec3 | null = null;
@@ -45,17 +45,17 @@ export class MoneyManager extends Component {
         // Clean up Firebase listeners
         this.cleanupListeners();
     }
-      private cleanupListeners(): void {
+    private cleanupListeners(): void {
         if (this.unsubscribeFishListener) {
             this.unsubscribeFishListener();
             this.unsubscribeFishListener = null;
         }
-        
+
         if (this.unsubscribeUserDataListener) {
             this.unsubscribeUserDataListener();
             this.unsubscribeUserDataListener = null;
         }
-        
+
         if (this.unsubscribeAuthListener) {
             this.unsubscribeAuthListener();
             this.unsubscribeAuthListener = null;
@@ -73,7 +73,7 @@ export class MoneyManager extends Component {
                 this.originalMoneyScale = this.moneyLabel.node.scale.clone();
             }
         }
-        
+
         // Display initial UI state
         this.updateMoneyDisplay();
         this.updateIncomeRateDisplay();
@@ -90,18 +90,18 @@ export class MoneyManager extends Component {
                 this.userData = null;
                 this.userFishes = [];
                 this.totalIncomeRate = 0;
-                  // Clean up fish listener if active
+                // Clean up fish listener if active
                 if (this.unsubscribeFishListener) {
                     this.unsubscribeFishListener();
                     this.unsubscribeFishListener = null;
                 }
-                
+
                 // Clean up user data listener if active
                 if (this.unsubscribeUserDataListener) {
                     this.unsubscribeUserDataListener();
                     this.unsubscribeUserDataListener = null;
                 }
-                
+
                 // Update UI to show no income
                 this.updateMoneyDisplay();
                 this.updateIncomeRateDisplay();
@@ -117,7 +117,7 @@ export class MoneyManager extends Component {
             console.log('Cannot initialize money manager: User not logged in');
             return;
         }
-        
+
         // Get initial user data
         this.userData = await databaseService.getUserData();
 
@@ -179,21 +179,37 @@ export class MoneyManager extends Component {
                 this.recalculateTotalIncomeRate();
 
                 // Calculate offline earnings
-                const earnedMoney = Math.floor(this.totalIncomeRate * timeOfflineSecs);
+                const earnedMoney = Math.floor(this.totalIncomeRate * Math.floor((timeOfflineSecs / 10)));
 
                 if (earnedMoney > 0) {
-                    // Update user's money
-                    const newMoney = this.userData.money + earnedMoney;
-                    await databaseService.updateUserField('money', newMoney);
-                    this.userData.money = newMoney;
+                    try {
+                        // Use atomic update to safely add offline earnings to current database value
+                        // This prevents race conditions with other money operations
+                        const userRef = databaseService.getUserReference();
+                        if (!userRef) {
+                            console.error('Cannot get user reference for offline earnings update');
+                            return;
+                        }
 
-                    // Show notification about offline earnings
-                    console.log(`You earned ${earnedMoney} coins while away!`);
+                        await userRef.child('money').transaction((currentMoney) => {
+                            // currentMoney will be the most up-to-date value from the database
+                            const currentValue = typeof currentMoney === 'number' ? currentMoney : 0;
+                            return currentValue + earnedMoney;
+                        });
 
-                    // Show offline earnings with animation
-                    const minutes = Math.floor(timeOfflineSecs / 60);
-                    const timeText = minutes > 0 ? `${minutes} min` : `${Math.floor(timeOfflineSecs)} sec`;
-                    this.animateOfflineEarnings(earnedMoney, timeText);
+                        // Show notification about offline earnings
+                        console.log(`You earned ${earnedMoney} coins while away!`);
+
+                        // Show offline earnings with animation
+                        const minutes = Math.floor(timeOfflineSecs / 60);
+                        const timeText = minutes > 0 ? `${minutes} min` : `${Math.floor(timeOfflineSecs)} sec`;
+                        this.animateOfflineEarnings(earnedMoney, timeText);
+
+                        // The onUserDataChanged listener will automatically update our local userData
+                        // so we don't need to manually update this.userData.money here
+                    } catch (error) {
+                        console.error('Error updating offline earnings:', error);
+                    }
                 }
             }
         }
@@ -213,20 +229,31 @@ export class MoneyManager extends Component {
         const earnedMoney = this.totalIncomeRate;
 
         if (earnedMoney > 0) {
-            // Update local user data
-            if (this.userData) {
-                this.userData.money += earnedMoney;
+            try {
+                // Use atomic update to safely add money to current database value
+                // This prevents race conditions with other money operations (like purchases)
+                const userRef = databaseService.getUserReference();
+                if (!userRef) {
+                    console.error('Cannot get user reference for money update');
+                    return;
+                }
 
-                // Update money display with animation
-                this.animateMoneyIncrease();
+                await userRef.child('money').transaction((currentMoney) => {
+                    // currentMoney will be the most up-to-date value from the database
+                    const currentValue = typeof currentMoney === 'number' ? currentMoney : 0;
+                    return currentValue + earnedMoney;
+                });
+
+                // Also update lastCalculatedMoney timestamp
+                await databaseService.updateUserField('lastCalculatedMoney', Date.now());
+
+                // The onUserDataChanged listener will automatically update our local userData
+                // and trigger the animation, so we don't need to manually update here
+                console.log(`Added ${earnedMoney} coins via passive income`);
+
+            } catch (error) {
+                console.error('Error updating money:', error);
             }
-
-            // Update database
-            const now = Date.now();
-            await Promise.all([
-                databaseService.updateUserField('money', this.userData?.money),
-                databaseService.updateUserField('lastCalculatedMoney', now)
-            ]);
         }
     }
 
