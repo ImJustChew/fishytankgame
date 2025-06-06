@@ -38,10 +38,13 @@
       },
       {
         "__id__": 26
+      },
+      {
+        "__id__": 28
       }
     ],
     "_prefab": {
-      "__id__": 28
+      "__id__": 30
     },
     "_lpos": {
       "__type__": "cc.Vec3",
@@ -570,6 +573,8 @@
       "__id__": 25
     },
     "fishType": 5,
+    "maxHealth": 100,
+    "currentHealth": 100,
     "bodyNode": {
       "__id__": 2
     },
@@ -582,8 +587,6 @@
     "closeNode": {
       "__id__": 16
     },
-    "zoomOutAnimationName": "FishZoomOut",
-    "hitAnimationName": "FishHit",
     "_id": ""
   },
   {
@@ -605,7 +608,7 @@
     "tag": 0,
     "_group": 1,
     "_density": 1,
-    "_sensor": true,
+    "_sensor": false,
     "_friction": 0.2,
     "_restitution": 0,
     "_offset": {
@@ -665,6 +668,40 @@
   {
     "__type__": "cc.CompPrefabInfo",
     "fileId": "61YphtT8FLq5w+G0tNnP3x"
+  },
+  {
+    "__type__": "cc.RigidBody2D",
+    "_name": "",
+    "_objFlags": 0,
+    "__editorExtras__": {},
+    "node": {
+      "__id__": 1
+    },
+    "_enabled": true,
+    "__prefab": {
+      "__id__": 29
+    },
+    "enabledContactListener": true,
+    "bullet": false,
+    "awakeOnLoad": true,
+    "_group": 1,
+    "_type": 1,
+    "_allowSleep": false,
+    "_gravityScale": 0,
+    "_linearDamping": 0,
+    "_angularDamping": 0,
+    "_linearVelocity": {
+      "__type__": "cc.Vec2",
+      "x": 0,
+      "y": 0
+    },
+    "_angularVelocity": 0,
+    "_fixedRotation": true,
+    "_id": ""
+  },
+  {
+    "__type__": "cc.CompPrefabInfo",
+    "fileId": "c8816YSU1Feph6CMSqJo2T"
   },
   {
     "__type__": "cc.PrefabInfo",
