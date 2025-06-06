@@ -98,6 +98,8 @@ export class ShopManager extends Component {
         fishData.price,
         spriteFrame // 可能是 null
       );
+      // log fishData.id
+      console.log(`Adding fish item: ${fishData.id}`);
 
       // 3. 监听 buy-fish 事件
       fishNode.on('buy-fish', this.onFishBought, this);
