@@ -10,6 +10,7 @@ export interface Fish {
     description: string; // Description of the fish
     price: number;    // Price of the fish
     health: number;
+    moneyPerSecond: number; // Money earned per second
     // NEW BATTLE PROPERTIES
     attackHP?: number;    // Combat health for attacking (0 = non-combatant)
     defenseHP?: number;   // Combat health for defending (0 = non-defender)
@@ -26,9 +27,10 @@ export const FISH_LIST: Fish[] = [
     {
         id: "fish_001",
         name: "Ruby Brem",
-        description: "A fiery red swimmer, known for its bold energy and school-loving nature.",
+        description: "A fiery red swimmer, known for its bold energy and school-loving nature. Generates 2 coins per second.",
         price: 30,
         health: 30,
+        moneyPerSecond: 2,
         defenseHP: 80,
         attackDamage: 15,
         attackSpeed: 60,
@@ -37,9 +39,10 @@ export const FISH_LIST: Fish[] = [
     {
         id: "fish_002",
         name: "Abyssal Pike",
-        description: "Dwelling in the dark, this stealthy predator strikes from the shadows.",
+        description: "Dwelling in the dark, this stealthy predator strikes from the shadows. Generates 3 coins per second.",
         price: 30,
         health: 30,
+        moneyPerSecond: 3,
         attackHP: 150,
         attackDamage: 35,
         attackSpeed: 80,
@@ -48,9 +51,10 @@ export const FISH_LIST: Fish[] = [
     {
         id: "fish_003",
         name: "Azure Snapper",
-        description: "Calm and calculated, it prefers clean waters and peaceful tankmates.",
+        description: "Calm and calculated, it prefers clean waters and peaceful tankmates. Generates 3 coins per second.",
         price: 35,
         health: 40,
+        moneyPerSecond: 3,
         defenseHP: 90,
         attackDamage: 12,
         attackSpeed: 50,
@@ -59,9 +63,10 @@ export const FISH_LIST: Fish[] = [
     {
         id: "fish_004",
         name: "Crimson Koi",
-        description: "A calm and noble swimmer, revered for its ruby-red scales and graceful glides through the tank.",
+        description: "A calm and noble swimmer, revered for its ruby-red scales and graceful glides through the tank. Generates 5 coins per second.",
         price: 50,
         health: 40,
+        moneyPerSecond: 5,
         defenseHP: 250,
         attackDamage: 25,
         attackSpeed: 40,
@@ -70,17 +75,19 @@ export const FISH_LIST: Fish[] = [
     {
         id: "fish_005",
         name: "Shiny Jack",
-        description: "A rare, radiant fish that gleams under tank lights — a true collector's gem.",
+        description: "A rare, radiant fish that gleams under tank lights — a true collector's gem. Generates 8 coins per second.",
         price: 70,
-        health: 50
+        health: 50,
+        moneyPerSecond: 8
         // Neutral fish - no battle stats
     },
     {
         id: "fish_006",
         name: "Nimlet",
-        description: "Small but swift, Nimlets dart around with unmatched speed and curiosity.",
+        description: "Small but swift, Nimlets dart around with unmatched speed and curiosity. Generates 10 coins per second.",
         price: 100,
         health: 50,
+        moneyPerSecond: 10,
         attackHP: 40,
         attackDamage: 20,
         attackSpeed: 100,
@@ -89,9 +96,10 @@ export const FISH_LIST: Fish[] = [
     {
         id: "fish_007",
         name: "Clownie Pop",
-        description: "Bubbly and playful, Clownie Pop brings color and laughter to any underwater scene.",
+        description: "Bubbly and playful, Clownie Pop brings color and laughter to any underwater scene. Generates 15 coins per second.",
         price: 150,
         health: 50,
+        moneyPerSecond: 15,
         defenseHP: 300,
         attackDamage: 18,
         attackSpeed: 55,
@@ -100,9 +108,10 @@ export const FISH_LIST: Fish[] = [
     {
         id: "fish_008",
         name: "Regal Banner",
-        description: "This royal-striped beauty glides with pride and elegance, often stealing the spotlight.",
+        description: "This royal-striped beauty glides with pride and elegance, often stealing the spotlight. Generates 20 coins per second.",
         price: 150,
         health: 40,
+        moneyPerSecond: 20,
         attackHP: 600,
         defenseHP: 700,
         attackDamage: 40,
@@ -112,9 +121,10 @@ export const FISH_LIST: Fish[] = [
     {
         id: "fish_009",
         name: "Verdant Darter",
-        description: "Quick and curious, this green dart zips through currents like a leaf in the wind.",
+        description: "Quick and curious, this green dart zips through currents like a leaf in the wind. Generates 50 coins per second.",
         price: 500,
         health: 70,
+        moneyPerSecond: 50,
         attackHP: 8000,
         attackDamage: 100,
         attackSpeed: 120,
