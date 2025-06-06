@@ -459,7 +459,7 @@ export class FriendsFishTankManager extends Component {
         
         try {
             // 获取朋友的鱼数据
-            const fishData = await this.getFriendFishData(friendUid);
+            const fishData = await socialService.getFriendsFish(friendUid);
             
             // 将数据转换为数组格式
             const fishArray: SavedFishType[] = [];
