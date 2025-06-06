@@ -294,7 +294,7 @@ class SocialService {
     /**
      * Attempt to steal a fish from a friend
      */
-    async stealFish(friendUid: string, fishId: string): Promise<{ success: boolean; message: string; detected?: boolean }> {
+    async stealFish(friendUid: string, fishId: string, stealSuccess?: boolean): Promise<{ success: boolean; message: string; detected?: boolean }> {
         const currentUser = authService.getCurrentUser();
         if (!currentUser) {
             return { success: false, message: 'No user is signed in' };
@@ -315,14 +315,6 @@ class SocialService {
                 return { success: false, message: 'Fish not found' };
             }
 
-            // Calculate steal success based on fish health and random chance
-            const stealChance = this.calculateStealChance(targetFish.health);
-            const stealSuccess = Math.random() < stealChance;
-
-            // Calculate detection chance (lower health fish are easier to steal undetected)
-            const detectionChance = Math.max(0.3, targetFish.health / 100 * 0.7);
-            const detected = Math.random() < detectionChance;
-
             // Get current user data for username
             const currentUserData = await databaseService.getUserData();
             if (!currentUserData) {
@@ -338,7 +330,7 @@ class SocialService {
                 fishType: targetFish.type,
                 timestamp: Date.now(),
                 success: stealSuccess,
-                detected: detected
+                detected: true
             };
 
             const stealRef = database.ref('stealAttempts').push();
@@ -361,17 +353,17 @@ class SocialService {
 
                 await database.ref().update(updates);
 
-                const message = detected
+                const message = true
                     ? `Successfully stole ${targetFish.type} but were detected!`
                     : `Successfully stole ${targetFish.type} without being detected!`;
 
-                return { success: true, message, detected };
+                return { success: true, message, detected: true };
             } else {
-                const message = detected
+                const message = true
                     ? 'Steal attempt failed and you were caught!'
                     : 'Steal attempt failed but you weren\'t detected.';
 
-                return { success: false, message, detected };
+                return { success: false, message, detected: true };
             }
 
         } catch (error) {
