@@ -1,7 +1,7 @@
 import { database } from './firebase';
 import authService from './auth-service';
 import firebase from './firebase-compat.js';
-import { INITIAL_MONEY } from '../constants';
+import { INITIAL_MONEY, INITIAL_TANK } from '../constants';
 
 export type UserAvatarCollection = {
     [avatarId: string]: {
@@ -33,6 +33,7 @@ export type UserData = {
         totalBattles: number;
         totalWins: number;
     };
+    tanktype: number;
 }
 
 export type SavedFishType = {
@@ -287,7 +288,8 @@ class DatabaseService {
                 lotteryTickets: 0,
                 totalBattles: 0,
                 totalWins: 0
-            }
+            },
+            tanktype: INITIAL_TANK,
         };
 
         try {
