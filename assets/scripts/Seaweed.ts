@@ -47,6 +47,8 @@ export class Seaweed extends Component {
     private randomTimeOffset: number = 0;
     private mousePreviousPos = new Vec2();
 
+    private musicAudioSource: AudioSource | null = null;
+
 
     onLoad() {
         this.states = this.segments.map(() => ({ 
@@ -57,6 +59,12 @@ export class Seaweed extends Component {
         this.baseTime = performance.now();
         this.randomTimeOffset = Math.random() * 1000; 
         console.log(`Seaweed initialized with random time offset: ${this.randomTimeOffset}`);
+    }
+
+    start() {
+        if (!this.musicAudioSource) {
+            this.musicAudioSource = this.node.getComponent(AudioSource);
+        }
     }
 
 
@@ -94,16 +102,8 @@ export class Seaweed extends Component {
             !this.isMouseNear && 
             this.canTrigger &&
             mouseMoveDist > 2) { 
-            if (this.disturbanceSound) {
-                const sfxNode = new Node('SFXAudioSource');
-                const sfx = sfxNode.addComponent(AudioSource);
-                sfx.clip = this.disturbanceSound;
-                sfx.volume = 5.0;
-                sfx.play();
-                this.node.addChild(sfxNode);
-                sfx.node.once(AudioSource.EventType.ENDED, () => {
-                    sfxNode.destroy();
-                });
+            if (this.musicAudioSource && this.disturbanceSound) {
+                this.musicAudioSource.playOneShot(this.disturbanceSound);
             }
             if(this.disturbanceIntensity <= 1.6)
                 if(this.disturbanceIntensity == 0) {

@@ -99,25 +99,6 @@ export class FishTankManager extends Component {
 
     }
 
-
-    private playBackgroundMusicWithFadeIn() {
-        console.log('Playing background music with fade-in effect');
-        if (!this.backgroundMusic) return;
-        if (!this.musicAudioSource) {
-            this.musicAudioSource = this.node.getComponent(AudioSource);
-        }
-        console.log('Music AudioSource:', this.musicAudioSource);
-
-        this.musicAudioSource.clip = this.backgroundMusic;
-        this.musicAudioSource.loop = true;
-        this.musicAudioSource.volume = 0; 
-        this.musicAudioSource.play();
-
-        tween(this.musicAudioSource)
-            .to(3, { volume: 0.2 })
-            .start();
-    }
-
     private isFoodNearFish(foodNode: Node, fishNode: Node): boolean {
         const foodPos = foodNode.getWorldPosition();
         const fishPos = fishNode.getWorldPosition();
@@ -126,8 +107,6 @@ export class FishTankManager extends Component {
     }
 
     private unsubscribeFishData: (() => void) | null = null; start() {
-
-        this.playBackgroundMusicWithFadeIn();
 
         if (this.autoLoadFish) {
             this.setupFishDataListener();

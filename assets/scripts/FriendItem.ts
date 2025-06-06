@@ -1,5 +1,6 @@
-import { _decorator, Component, Node, Label, Button, Color, Sprite, AudioClip, AudioSource } from 'cc';
+import { _decorator, Component, Node, Label, Button, Color, Sprite, AudioClip, AudioSource, director } from 'cc';
 import { FriendData, StealAttempt } from './firebase/social-service';
+import { TankBGMManager } from './TankBGMManager';
 
 const { ccclass, property } = _decorator;
 
@@ -160,7 +161,16 @@ export class FriendItem extends Component {
      * TODO: implement the visit button click handler
      * change to friend's tank scene
      */
-    private onVisitCallback: (friendUid: string) => void = null; //  TODO
+    private onVisitCallback: (friendUid: string) => void = (friendUid: string) => { // TODO
+        console.log('Visiting friend tank:', friendUid);
+                if (TankBGMManager.bgmNode) {
+            console.log('Removing BGM node from director');
+            director.removePersistRootNode(TankBGMManager.bgmNode);
+        }
+        // setTimeout(() => {
+        //      director.loadScene('?????');
+        //  }, 200);
+    }
 
 
     getFriendData(): FriendData {
