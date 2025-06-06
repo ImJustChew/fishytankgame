@@ -1,5 +1,5 @@
 // Assets/Scripts/shop/ShopManager.ts
-import { _decorator, Component, Prefab, instantiate, ScrollView, Label, Node, UITransform, Color } from 'cc';
+import { _decorator, Component, Prefab, instantiate, ScrollView, Label, Node, UITransform, Color, Button, director } from 'cc';
 import { FishItem } from './FishItem';
 import { FISH_LIST, Fish } from '../FishData';
 import { FishManager } from '../FishManager';
@@ -27,10 +27,18 @@ export class ShopManager extends Component {
   @property(Label)
   public warningLabel: Label = null!;
 
+  @property(Button)
+  public exitButton: Button = null!; 
+
   @property
   public warningDuration = 3; // 警告显示时间（秒）
 
   private money = 0;
+
+  /*onload() {
+    // bind exit button click event
+    
+  }*/
 
   async start() {
     await this.fetchOrInitMoney();
@@ -39,6 +47,12 @@ export class ShopManager extends Component {
     // 初始化警告标签
     if (this.warningLabel) {
       this.warningLabel.node.active = false;
+    }
+    if (this.exitButton) {
+      this.exitButton.node.on(Button.EventType.CLICK, () => {
+        console.log('Exit button clicked, returning to main menu');
+        director.loadScene('aquarium');
+      });
     }
   }
 
