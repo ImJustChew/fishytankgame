@@ -151,9 +151,11 @@ export class BubbleGenerator extends Component {
     clearAllBubbles() {
         const children = this.node.children.slice();
         children.forEach(child => {
-            const bubbleComponent = child.children[0].getComponent(Bubble);
-            if (bubbleComponent) {
-                bubbleComponent.destroyBubble();
+            if (child.children && child.children.length > 0 && child.children[0]) {
+                const bubbleComponent = child.children[0].getComponent(Bubble);
+                if (bubbleComponent) {
+                    bubbleComponent.destroyBubble();
+                }
             }
         });
 

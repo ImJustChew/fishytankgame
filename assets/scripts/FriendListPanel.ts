@@ -1,4 +1,4 @@
-import { _decorator, Component, Node, Prefab, instantiate, ScrollView, Button, director, Label, EditBox, Color } from 'cc';
+import { _decorator, Component, Node, Prefab, instantiate, ScrollView, Button, director, Label, EditBox, Color, AudioClip, AudioSource } from 'cc';
 import socialService, { FriendData, StealAttempt } from './firebase/social-service';
 import { FriendItem } from './FriendItem';
 import { UITransform } from 'cc';
@@ -38,11 +38,19 @@ export class FriendListPanel extends Component {
     @property(EditBox)
     addFriendEditBox: EditBox = null;
 
+    @property(Label)
+    displayEditBoxLabel: Label = null;
+
+    @property(AudioClip)
+    clickButtonSound: AudioClip = null;
+
     private friendItems: FriendItem[] = [];
     private stealHistory: { incoming: StealAttempt[]; outgoing: StealAttempt[] } = { incoming: [], outgoing: [] };
 
     private removeMode: boolean = false; // whether remove button is enabled
     private isAddFriendPanelVisible: boolean = false;
+
+    private musicAudioSource: AudioSource | null = null;
 
     onLoad() {
         if (this.closeButton) {
@@ -63,12 +71,15 @@ export class FriendListPanel extends Component {
     }
 
     start() {
-        this.loadFriendsList();
-        this.generateTestFriendItems(true); // two testing item, delete after testing
-        this.generateTestFriendItems(false); // two testing item, delete after testing
+        //this.loadFriendsList();
+        //this.generateTestFriendItems(true); // two testing item, delete after testing
+        //this.generateTestFriendItems(false); // two testing item, delete after testing
         this.adjustContentHeight();
         this.addFriendPanel.active = false;
         this.isAddFriendPanelVisible = false;
+        if (!this.musicAudioSource) {
+            this.musicAudioSource = this.node.getComponent(AudioSource);
+        }
     }
 
 
@@ -178,6 +189,9 @@ export class FriendListPanel extends Component {
 
 
     private onCloseClicked() {
+        if (this.musicAudioSource && this.clickButtonSound) {
+                this.musicAudioSource.playOneShot(this.clickButtonSound);
+        }
         if (this.removeMode) {
             this.toggleRemoveMode();
         }
@@ -189,6 +203,9 @@ export class FriendListPanel extends Component {
         }
         if (this.notificationLabel) {
             this.notificationLabel.node.active = false;
+        }
+        if(this.displayEditBoxLabel) {
+            this.displayEditBoxLabel.string = "";
         }
         this.node.active = false;
         console.log('friends panel closed');
@@ -224,6 +241,9 @@ export class FriendListPanel extends Component {
 
 
     private toggleRemoveMode() {
+        if (this.musicAudioSource && this.clickButtonSound) {
+            this.musicAudioSource.playOneShot(this.clickButtonSound);
+        }
         this.removeMode = !this.removeMode;
         this.friendItems.forEach(item => {
             item.toggleRemoveButton(this.removeMode);
@@ -293,6 +313,9 @@ export class FriendListPanel extends Component {
     }
 
     private toggleAddFriendPanel() {
+        if (this.musicAudioSource && this.clickButtonSound) {
+            this.musicAudioSource.playOneShot(this.clickButtonSound);
+        }
         this.isAddFriendPanelVisible = !this.isAddFriendPanelVisible;
         this.addFriendPanel.active = this.isAddFriendPanelVisible;
         if (this.isAddFriendPanelVisible) {
@@ -307,11 +330,17 @@ export class FriendListPanel extends Component {
                 this.notificationLabel.node.active = false;
             }
         }
+        if(this.displayEditBoxLabel) {
+            this.displayEditBoxLabel.string = "";
+        }
     }
 
 
     private async onSendRequest() {
         if (!this.addFriendEditBox) return;
+        if (this.musicAudioSource && this.clickButtonSound) {
+            this.musicAudioSource.playOneShot(this.clickButtonSound);
+        }
         const identifier = this.addFriendEditBox.string.trim();
         if (!identifier) {
             this.showNotification('Please enter something', false);

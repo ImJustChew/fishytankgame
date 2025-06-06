@@ -1,5 +1,6 @@
 // Assets/scripts/shop/FishItem.ts
 import { _decorator, Component, Label, Button, Sprite, SpriteFrame } from 'cc';
+import { AudioManager } from '../AudioManager';
 const { ccclass, property } = _decorator;
 
 /**
@@ -52,6 +53,12 @@ export class FishItem extends Component {
     }
 
     private onBuyClicked() {
+        // Play purchase sound effect
+        const audioManager = AudioManager.getInstance();
+        if (audioManager) {
+            audioManager.playSFX('button_click');
+        }
+
         // 點擊 BUY 後發射事件，父層 (ShopManager) 會處理扣款/生成魚
         this.node.emit('buy-fish', {
             detail: {  // Add detail property to match expected structure

@@ -1,12 +1,11 @@
 // Assets/Scripts/shop/ShopManager.ts
-import { _decorator, Component, Prefab, instantiate, ScrollView, Label, Node, UITransform, Color } from 'cc';
+import { _decorator, Component, Prefab, instantiate, ScrollView, Label, Node, UITransform, Color, Button, director } from 'cc';
 import { FishItem } from './FishItem';
 import { FISH_LIST, Fish } from '../FishData';
 import { FishManager } from '../FishManager';
-
-// 下面两行假设你已经在 Assets/Scripts/shop/ 目录里
 import { purchaseFish } from './purchaseFish';
 import databaseService, { UserData } from '../firebase/database-service';
+import { AudioManager } from '../AudioManager';
 
 const { ccclass, property } = _decorator;
 
@@ -27,18 +26,36 @@ export class ShopManager extends Component {
   @property(Label)
   public warningLabel: Label = null!;
 
+  @property(Button)
+  public exitButton: Button = null!; 
+
   @property
   public warningDuration = 3; // 警告显示时间（秒）
 
+  @property(Label)
+  public balanceLabel: Label = null!;
+
   private money = 0;
+
+  /*onload() {
+    // bind exit button click event
+    
+  }*/
 
   async start() {
     await this.fetchOrInitMoney();
     this.populateFishList();
+    this.updateBalanceDisplay();
 
     // 初始化警告标签
     if (this.warningLabel) {
       this.warningLabel.node.active = false;
+    }
+    if (this.exitButton) {
+      this.exitButton.node.on(Button.EventType.CLICK, () => {
+        console.log('Exit button clicked, returning to main menu');
+        director.loadScene('aquarium');
+      });
     }
   }
 
@@ -47,6 +64,7 @@ export class ShopManager extends Component {
     if (!userData) {
       console.warn('ShopManager: 用户未登录或无法读取数据，使用默认金钱');
       this.money = this.defaultMoney;
+      this.updateBalanceDisplay();
       return;
     }
     if (typeof userData.money !== 'number') {
@@ -55,6 +73,7 @@ export class ShopManager extends Component {
     } else {
       this.money = userData.money;
     }
+    this.updateBalanceDisplay();
   }
 
   private populateFishList() {
@@ -108,25 +127,79 @@ export class ShopManager extends Component {
     if (this.money < price) {
       console.log(`Not enough money to buy ${typeId}`);
       this.showWarning(`Insufficient funds! Need $${price}, current balance: $${this.money}`);
+      
+      // Play error sound for insufficient funds
+      const audioManager = AudioManager.getInstance();
+      if (audioManager) {
+        try {
+          audioManager.playSFX('purchase_failed');
+        } catch (e) {
+          console.log('purchase_failed sound not found, using fallback sound');
+          audioManager.playSFX('button_click');
+        }
+      }
       return;
     }
 
     try {
       await purchaseFish(typeId);
       this.money -= price;
-      console.log(`Fish purchased: ${typeId}, remaining balance: $${this.money}`);
+      this.updateBalanceDisplay();
+      
+      // Find the fish name from FISH_LIST
+      const fishData = FISH_LIST.find(fish => fish.id === typeId);
+      const fishName = fishData ? fishData.name : typeId;
+      
+      console.log(`Fish purchased: ${fishName}, remaining balance: $${this.money}`);
 
-      const fishNode = event.target as Node;
-      const fishButtonLabel = fishNode.getComponentInChildren(Label);
-      if (fishButtonLabel) {
-        fishButtonLabel.string = 'Purchased';
+      // Play success sound
+      const audioManager = AudioManager.getInstance();
+      if (audioManager) {
+        // Try to play purchase_success, fallback to a generic sound if not found
+        try {
+          audioManager.playSFX('purchase_success');
+        } catch (e) {
+          console.log('purchase_success sound not found, using fallback sound');
+          // Try to use button_click or another existing sound as fallback
+          audioManager.playSFX('button_click');
+        }
       }
-      const buyBtnComp = fishNode.getComponent(FishItem)?.getBuyButton();
-      if (buyBtnComp) {
-        buyBtnComp.interactable = false;
+
+      // Show success message in warning label with green color
+      this.showWarning(`Successfully purchased ${fishName}!`, new Color(50, 200, 50, 255));
+
+      // Only update the buy button state if event.target exists
+      if (event && event.target) {
+        const fishItem = event.target.getComponent(FishItem);
+        if (fishItem) {
+          const buyButton = fishItem.getBuyButton();
+          if (buyButton) {
+            buyButton.interactable = false;
+            
+            // Update button label directly
+            buyButton.getComponent(Label).string = 'Purchased';
+          }
+        }
+      } else {
+        console.warn('Purchase successful but event.target is undefined');
       }
     } catch (err: any) {
       console.error(`Purchase failed: ${err.message}`);
+      
+      // Play error sound
+      const audioManager = AudioManager.getInstance();
+      if (audioManager) {
+        // Try to play purchase_failed, fallback to a generic sound if not found
+        try {
+          audioManager.playSFX('purchase_failed');
+        } catch (e) {
+          console.log('purchase_failed sound not found, using fallback sound');
+          // Try to use another existing sound as fallback
+          audioManager.playSFX('button_click');
+        }
+      }
+      
+      // Show error message in warning label (default red color)
       if (err.message === 'INSUFFICIENT_FUNDS') {
         this.showWarning('Purchase failed: Insufficient funds');
       } else if (err.message === 'USER_NOT_LOGGED_IN') {
@@ -141,14 +214,14 @@ export class ShopManager extends Component {
    * 显示警告信息
    * @param message 警告信息
    */
-  private showWarning(message: string) {
+  private showWarning(message: string, color: Color = new Color(255, 100, 100, 255)) {
     if (!this.warningLabel) return;
 
     // 设置警告文本
     this.warningLabel.string = message;
 
-    // 设置警告颜色（红色）
-    this.warningLabel.color = new Color(255, 100, 100, 255);
+    // 设置警告颜色
+    this.warningLabel.color = color;
 
     // 显示警告
     this.warningLabel.node.active = true;
@@ -159,5 +232,26 @@ export class ShopManager extends Component {
         this.warningLabel.node.active = false;
       }
     }, this.warningDuration);
+  }
+
+  private updateBalanceDisplay() {
+    if (this.balanceLabel) {
+      this.balanceLabel.string = `Balance: $${this.money}`;
+      
+      // Change color based on balance amount
+      if (this.money > 500) {
+        // Rich - green color
+        this.balanceLabel.color = new Color(50, 200, 50, 255);
+      } else if (this.money > 100) {
+        // Moderate - blue color
+        this.balanceLabel.color = new Color(50, 150, 255, 255);
+      } else if (this.money > 50) {
+        // Low - yellow color
+        this.balanceLabel.color = new Color(255, 200, 50, 255);
+      } else {
+        // Very low - red color
+        this.balanceLabel.color = new Color(255, 100, 100, 255);
+      }
+    }
   }
 }

@@ -1,4 +1,4 @@
-import { _decorator, Component, Button, Color, director } from 'cc';
+import { _decorator, Component, Button, Color, director, AudioClip, AudioSource, Node } from 'cc';
 import authService from './firebase/auth-service';
 import databaseService, { UserData } from './firebase/database-service';
 import firebase from './firebase/firebase-compat.js';
@@ -22,6 +22,9 @@ export class StartButtonController extends Component {
         tooltip: 'Color when button is enabled (logged in)'
     })
     private enabledColor: Color = new Color(255, 255, 255, 255);
+
+    @property(AudioClip)
+    clickButtonSound: AudioClip = null;
 
     private authStateUnsubscribe: firebase.Unsubscribe | null = null;
     private originalButtonColor: Color = new Color();
@@ -99,7 +102,17 @@ export class StartButtonController extends Component {
             console.log('[StartButtonController] Start button clicked but not interactable');
             return;
         }
-
+        if (this.clickButtonSound) {
+            const sfxNode = new Node('SFXAudioSource');
+            const sfx = sfxNode.addComponent(AudioSource);
+            sfx.clip = this.clickButtonSound;
+            sfx.volume = 0.6;
+            sfx.play();
+            this.node.addChild(sfxNode);
+            sfx.node.once(AudioSource.EventType.ENDED, () => {
+                sfxNode.destroy();
+            });
+        }
         console.log('[StartButtonController] Start button clicked - starting game!');
         this.startGame();
     }
@@ -107,8 +120,9 @@ export class StartButtonController extends Component {
     private startGame() {
 
         console.log('[StartButtonController] Starting game...');
-
-        director.loadScene('scene');
+        setTimeout(() => {
+                director.loadScene('aquarium');
+        }, 150);
     }
 
     /**

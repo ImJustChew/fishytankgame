@@ -1,4 +1,4 @@
-import { _decorator, Component, Node, input, Input, EventMouse, Vec2, Vec3, math } from 'cc';
+import { _decorator, Component, Node, input, Input, EventMouse, Vec2, Vec3, math, AudioClip, AudioSource } from 'cc';
 const { ccclass, property } = _decorator;
 
 type SegmentState = {
@@ -35,6 +35,9 @@ export class Seaweed extends Component {
     @property
     recoverySpeed: number = 2.0; 
 
+    @property(AudioClip)
+    disturbanceSound: AudioClip | null = null;
+
     private states: SegmentState[] = [];
     private mousePos = new Vec2();
     private isMouseNear = false; 
@@ -43,6 +46,9 @@ export class Seaweed extends Component {
     private baseTime = 0;
     private randomTimeOffset: number = 0;
     private mousePreviousPos = new Vec2();
+
+    private musicAudioSource: AudioSource | null = null;
+
 
     onLoad() {
         this.states = this.segments.map(() => ({ 
@@ -54,6 +60,13 @@ export class Seaweed extends Component {
         this.randomTimeOffset = Math.random() * 1000; 
         console.log(`Seaweed initialized with random time offset: ${this.randomTimeOffset}`);
     }
+
+    start() {
+        if (!this.musicAudioSource) {
+            this.musicAudioSource = this.node.getComponent(AudioSource);
+        }
+    }
+
 
     onDestroy() {
         input.off(Input.EventType.MOUSE_MOVE, this.onMouseMove, this);
@@ -89,6 +102,9 @@ export class Seaweed extends Component {
             !this.isMouseNear && 
             this.canTrigger &&
             mouseMoveDist > 2) { 
+            if (this.musicAudioSource && this.disturbanceSound) {
+                this.musicAudioSource.playOneShot(this.disturbanceSound);
+            }
             if(this.disturbanceIntensity <= 1.6)
                 if(this.disturbanceIntensity == 0) {
                     this.disturbanceIntensity += 0.8;

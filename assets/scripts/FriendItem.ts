@@ -1,5 +1,6 @@
-import { _decorator, Component, Node, Label, Button, Color, Sprite } from 'cc';
+import { _decorator, Component, Node, Label, Button, Color, Sprite, AudioClip, AudioSource, director } from 'cc';
 import { FriendData, StealAttempt } from './firebase/social-service';
+import { TankBGMManager } from './TankBGMManager';
 
 const { ccclass, property } = _decorator;
 
@@ -24,10 +25,15 @@ export class FriendItem extends Component {
     @property(Button)
     removeButton: Button = null;
 
+    @property(AudioClip)
+    clickButtonSound: AudioClip = null;
+
     private friendData: FriendData = null;
     private onRemoveCallback: (friendUid: string) => void = null;
     private onAcceptCallback: (friendUid: string) => void = null;
     private isFriendPending: boolean = false;
+
+    private musicAudioSource: AudioSource | null = null;
 
     onLoad() {
         if (this.visitButton) {
@@ -35,6 +41,13 @@ export class FriendItem extends Component {
         }
         if (this.removeButton) {
             this.removeButton.node.on(Button.EventType.CLICK, this.onRemoveClicked, this);
+        }
+    }
+
+
+    start() {
+        if (!this.musicAudioSource) {
+            this.musicAudioSource = this.node.getComponent(AudioSource);
         }
     }
 
@@ -129,6 +142,9 @@ export class FriendItem extends Component {
      * and the button color will be changed to green
      */
     private onVisitClicked() {
+        if (this.musicAudioSource && this.clickButtonSound) {
+            this.musicAudioSource.playOneShot(this.clickButtonSound);
+        }
         if (this.isFriendPending) {
             console.log('Accepting friend request:', this.friendData.uid);
             if (this.onAcceptCallback && this.friendData) {
@@ -145,7 +161,16 @@ export class FriendItem extends Component {
      * TODO: implement the visit button click handler
      * change to friend's tank scene
      */
-    private onVisitCallback: (friendUid: string) => void = null; //  TODO
+    private onVisitCallback: (friendUid: string) => void = (friendUid: string) => { // TODO
+        console.log('Visiting friend tank:', friendUid);
+                if (TankBGMManager.bgmNode) {
+            console.log('Removing BGM node from director');
+            director.removePersistRootNode(TankBGMManager.bgmNode);
+        }
+        // setTimeout(() => {
+        //      director.loadScene('?????');
+        //  }, 200);
+    }
 
 
     getFriendData(): FriendData {
@@ -160,6 +185,9 @@ export class FriendItem extends Component {
 
 
     private onRemoveClicked() {
+        if (this.musicAudioSource && this.clickButtonSound) {
+            this.musicAudioSource.playOneShot(this.clickButtonSound);
+        }
         if (this.onRemoveCallback && this.friendData) {
             this.onRemoveCallback(this.friendData.uid);
         }
