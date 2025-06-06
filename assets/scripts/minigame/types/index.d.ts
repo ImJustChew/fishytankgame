@@ -1,9 +1,11 @@
+/*
 export type WebSocketResponse = {
   action: string;
   succ: boolean;
   data?: any;
   msg?: string;
 };
+*/
 
 export type ClientObject = {
   roomId: string;
@@ -44,14 +46,6 @@ export interface FishConfig {
   isActive: boolean; // 是否在遊戲中
 }
 
-// 結果回傳
-export interface HitFishResult {
-  result: boolean; // 是否中獎
-  fishId: string; // 魚類別的 ID
-  uuid: string; // 魚的 UUID
-  point: number; // 加上中獎結果的當前點數總額(用不到)
-}
-
 // 音樂類型
 export enum MusicClipType {
   Bgm
@@ -63,4 +57,16 @@ export enum SoundClipType {
   Win, // 1
   Hit, // 2
   Coin // 3
+}
+
+// Singleplayer events - for local game communication
+export interface FishCaughtEvent {
+  fishId: string;
+  uuid: string;
+  points: number;
+}
+
+export interface FishHitEvent {
+  fishId: string;
+  uuid: string;
 }

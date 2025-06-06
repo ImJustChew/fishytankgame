@@ -2,6 +2,7 @@ import { _decorator, Component, instantiate, Node, Prefab } from 'cc';
 import { Bullet } from './Bullet';
 import { BulletPool } from './BulletPool';
 import { EventManager } from './EventManager';
+import { GameSceneManager } from './GameSceneManager';
 const { ccclass, property } = _decorator;
 
 @ccclass('BulletManager')
@@ -42,11 +43,20 @@ export class BulletManager extends Component {
 
   spawnBullet() {
     const bullet = this.bullet_pool.getBullet();
-    bullet.getComponent(Bullet).initDirection(this.gunBody.angle);
+    const bulletComponent = bullet.getComponent(Bullet);
+    
+    // Set bullet direction
+    bulletComponent.initDirection(this.gunBody.angle);
+    
+    // ✅ GET BULLET LEVEL FROM GAMESCENEMANAGER
+    const currentBulletLevel = this.getCurrentBulletLevel();
+    bulletComponent.setBulletDamage(currentBulletLevel);
+    
     bullet.setPosition(0, 0, 0);
     bullet.setParent(this.node);
   }
 
+  // ✅ ADD MISSING stopBullet METHOD
   stopBullet(bullet: Node) {
     // 回收子彈
     if (this.bullet_pool) {
@@ -54,5 +64,14 @@ export class BulletManager extends Component {
     } else {
       bullet.destroy();
     }
+  }
+
+  // ✅ GET CURRENT BULLET LEVEL FROM GAMESCENEMANAGER
+  getCurrentBulletLevel(): number {
+    const gameSceneManager = this.node.scene.getComponentInChildren(GameSceneManager);
+    if (gameSceneManager) {
+      return gameSceneManager.bulletLevel;
+    }
+    return 3; // Default level if not found
   }
 }

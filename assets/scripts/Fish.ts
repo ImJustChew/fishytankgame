@@ -9,16 +9,16 @@ const { ccclass, property } = _decorator;
 @ccclass('Fish')
 export class Fish extends Component {
     @property
-    moveSpeed: number = 50;
+    moveSpeed: number = 100;
 
     @property
-    changeDirectionInterval: number = 3; // Increased from 2 to 3 seconds for longer swimming segments
+    changeDirectionInterval: number = 3;
 
     @property
-    hungerDecayRate: number = 2; // Health points lost per hour when not fed
+    hungerDecayRate: number = 2;
 
     @property
-    hungerDecayInterval: number = 3600; // Time in seconds before health starts decaying (1 hour)
+    hungerDecayInterval: number = 3600;
 
     flipSpriteHorizontally: boolean = false;
 
@@ -27,21 +27,79 @@ export class Fish extends Component {
     private currentDirection: Vec3 = new Vec3();
     private moveTween: Tween<Node> | null = null;
     private directionTimer: number = 0;
-
     private sprite: Sprite | null = null;
-
-    // fish target which food to nyammyyy yummy
     private targetPos: Vec3 | null = null;
 
+    // New properties for right-to-left movement
+    private isGameFish: boolean = false; // Flag to distinguish game fish from tank fish
+    private spawnTime: number = 0;
+    private maxLifeTime: number = 20;
+    private spawnX: number = 0;
+
     start() {
-        // Get the sprite component from the same node
         this.sprite = this.getComponent(Sprite);
-        this.initializeMovement();
+        if (!this.isGameFish) {
+            this.initializeMovement();
+        }
     }
 
     update(deltaTime: number) {
-        const variation = this.changeDirectionInterval * 0.5; // 50% variation
+        if (this.isGameFish) {
+            // Game fish: move from right to left
+            this.updateGameFishMovement(deltaTime);
+        } else {
+            // Tank fish: normal random movement
+            this.updateTankFishMovement(deltaTime);
+        }
+    }
+
+    /**
+     * Initialize fish for game mode (right-to-left movement)
+     */
+    public initializeGameFish(spawnX: number, spawnY: number, speed: number, maxLifeTime: number) {
+        this.isGameFish = true;
+        this.spawnTime = Date.now();
+        this.spawnX = spawnX;
+        this.maxLifeTime = maxLifeTime;
+        this.moveSpeed = speed;
+        
+        // Set initial position
+        this.node.setPosition(spawnX, spawnY, 0);
+        
+        // Face left (moving leftward)
+        if (this.sprite) {
+            this.node.setScale(-1, 1, 1); // Flip horizontally to face left
+        }
+        
+        console.log(`Game fish spawned at (${spawnX}, ${spawnY}) with speed ${speed}`);
+    }
+
+    /**
+     * Update movement for game fish (right-to-left)
+     */
+    private updateGameFishMovement(deltaTime: number) {
+        const now = Date.now();
+        const elapsedTime = (now - this.spawnTime) / 1000; // Convert to seconds
+        const distance = this.moveSpeed * elapsedTime;
+        const currentX = this.spawnX - distance; // Move leftward
+        const position = this.node.position;
+        
+        this.node.setPosition(currentX, position.y, position.z);
+        
+        // Check if fish should be destroyed
+        if (currentX <= -this.spawnX || elapsedTime > this.maxLifeTime) {
+            console.log(`Game fish destroyed: currentX=${currentX}, elapsedTime=${elapsedTime}`);
+            this.destroyFish();
+        }
+    }
+
+    /**
+     * Update movement for tank fish (normal behavior)
+     */
+    private updateTankFishMovement(deltaTime: number) {
+        const variation = this.changeDirectionInterval * 0.5;
         const randomInterval = this.changeDirectionInterval + (Math.random() - 0.5) * 2 * variation;
+        
         if (this.targetPos) {
             const currentPos = this.node.getPosition();
             const direction = new Vec3();
@@ -49,57 +107,74 @@ export class Fish extends Component {
 
             if (this.sprite) {
                 const shouldFlip = this.flipSpriteHorizontally
-                    ? direction.x > 0 // flip if target is to the right
-                    : direction.x < 0; // flip if target is to the left
+                    ? direction.x > 0
+                    : direction.x < 0;
                 this.node.setScale(shouldFlip ? -1 : 1, 1, 1);
             }
 
             if (direction.length() > 1) {
                 direction.normalize();
-                // fish hungry so move quiickkkkk sonic
-                // TODO: maybe decay move speed? lol
                 const movement = direction.multiplyScalar(this.moveSpeed * 3 * deltaTime);
                 this.node.setPosition(currentPos.add(movement));
             }
         } else {
             if (this.moveTween == null) {
-                // If no target, continue normal movement
                 this.startMovement();
             }
         }
 
         this.directionTimer += deltaTime;
 
-        // Add random variation to direction change interval (±50% of base interval)
-
-
-        // Change direction randomly or when hitting bounds
         if (!this.targetPos && (this.directionTimer >= randomInterval || this.isHittingBounds())) {
             this.changeDirection();
             this.directionTimer = 0;
         }
 
-        // Check for health decay due to hunger
         this.checkHealthDecay(deltaTime);
+    }
+
+    /**
+     * Handle bullet hit (for game fish)
+     */
+    public onBulletHit() {
+        if (this.isGameFish) {
+            console.log('Game fish hit by bullet');
+            // Add hit effects here (animation, sound, etc.)
+            this.destroyFish();
+            return true; // Return true if hit was successful
+        }
+        return false;
+    }
+
+    /**
+     * Destroy the fish
+     */
+    private destroyFish() {
+        // Stop any tweens
+        if (this.moveTween) {
+            this.moveTween.stop();
+        }
+        
+        // Emit destroy event for FishManager to handle
+        this.node.emit('fish-destroyed', this);
+        
+        // Destroy the node
+        this.node.destroy();
     }
 
     public initializeFish(fishData: SavedFishType, tankBounds: { min: Vec3, max: Vec3 }) {
         this.fishData = fishData;
         this.tankBounds = tankBounds;
+        this.isGameFish = false; // This is a tank fish
 
-        // Ensure lastFedTime is set for new fish
         if (!this.fishData.lastFedTime) {
             this.fishData.lastFedTime = Date.now();
-            // Update the database with the initial lastFedTime
             if (this.fishData.id) {
                 databaseService.updateFish(this.fishData.id, { lastFedTime: this.fishData.lastFedTime });
             }
         }
 
-        // Set initial random position within tank bounds
         this.setRandomPosition();
-
-        // Initialize movement
         this.initializeMovement();
     }
 

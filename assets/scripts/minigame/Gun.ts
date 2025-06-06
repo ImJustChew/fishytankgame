@@ -13,7 +13,6 @@ import {
   Vec3
 } from 'cc';
 import { BulletManager } from './BulletManager';
-// import { GameManager } from './GameManager';
 import { EventManager } from './EventManager';
 import { SoundClipType } from './types/index.d';
 import { AudioManager } from './AudioManager';
@@ -89,8 +88,7 @@ export class Gun extends Component {
     // 為了解決負數會被 math.clamp 換算成 20 的問題，這裡加上絕對值
     const angle = math.clamp(Math.abs(angleTheta), 20, 160);
     this.bodyNode.angle = angle;
-    // 發送砲管角度變更 'rotate-gun' 事件
-    // GameManager.instance.sendMessageWithRoomId('rotate-gun', `${angle}`);
+    // Removed multiplayer gun rotation sync
   }
 
   fire() {
@@ -105,9 +103,6 @@ export class Gun extends Component {
     this.bulletManager.spawnBullet();
     // 播放音效
     AudioManager.instance.playSound(SoundClipType.Bullet);
-    // 扣點數(發布事件給 GameSceneManager，讓他傳訊息給後端)
-    EventManager.eventTarget.emit('before-fire-bullet');
-    // 發送射擊 'fire-gun' 事件(告訴其他玩家，我發射子彈了)
-    // GameManager.instance.sendMessageWithRoomId('fire-gun', null);
+    // ✅ REMOVE bullet cost event - no more 'bullet-fired' event needed
   }
 }

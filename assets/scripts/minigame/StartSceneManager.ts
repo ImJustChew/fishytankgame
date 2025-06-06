@@ -6,11 +6,7 @@ const { ccclass, property } = _decorator;
 @ccclass('StartSceneManager')
 export class StartSceneManager extends Component {
   @property(Button)
-  public createRoomButton: Button = null;
-  @property(Button)
-  public joinRoomButton: Button = null;
-  @property(Button)
-  public addButton: Button = null;
+  public startGameButton: Button = null; // Renamed from createRoomButton
   @property(Button)
   public quitButton: Button = null;
   @property(Button)
@@ -20,92 +16,63 @@ export class StartSceneManager extends Component {
   @property(Node)
   public panelStart: Node = null;
   @property(Node)
-  public panelJoin: Node = null;
-  @property(Node)
   public popupModal: Node = null;
   @property(Label)
   public modalText: Label = null;
   @property(EditBox)
-  public roomIdInput: EditBox = null;
-  @property(EditBox)
   public playerNameInput: EditBox = null;
-  @property(Node)
-  public ErrorLabel: Node = null;
 
   protected onLoad(): void {
-    console.log('StartSceneManager onLoad');
-    // 註冊事件
+    console.log('StartSceneManager onLoad - Singleplayer Mode');
+    // 註冊事件 (singleplayer events only)
     EventManager.eventTarget.on('init-start-scene', this.initButtons, this);
-    EventManager.eventTarget.on('response-fail', this.showResponseFail, this);
-    EventManager.eventTarget.on('websocket-disconnect', this.stopAction, this);
   }
 
   start() {
     // 隨機玩家名稱
-    const randomName = `玩家${Math.floor(Math.random() * 1000)}`;
+    const randomName = `player${Math.floor(Math.random() * 1000)}`;
     this.playerNameInput.string = randomName;
+    this.initButtons();
   }
 
   protected onDestroy(): void {
     // 註銷事件
     EventManager.eventTarget.off('init-start-scene', this.initButtons, this);
-    EventManager.eventTarget.off('response-fail', this.showResponseFail, this);
-    EventManager.eventTarget.off('websocket-disconnect', this.stopAction, this);
   }
 
   initButtons() {
-    console.log('StartSceneManager initButtons');
+    console.log('StartSceneManager initButtons - Singleplayer');
     // 將 StartScene 的按鈕改成可互動
-    this.createRoomButton.interactable = true;
-    this.joinRoomButton.interactable = true;
-    this.addButton.interactable = true;
+    this.startGameButton.interactable = true;
     this.quitButton.interactable = true;
   }
 
-  onClickCreateRoom() {
+  onClickStartGame() {
     if (this.playerNameInput.string.trim() === '') {
-      this.popupModal.active = true;
-      this.modalText.string = '請輸入玩家名稱';
+      this.showPopupModal('請輸入玩家名稱');
     } else {
-      // 發送建立房間 'create-room' 事件
-      GameManager.instance.sendMessage('create-room', {
-        playerName: this.playerNameInput.string
-      });
-      // 等待事件回應期間，將按鈕設為不可互動
-      this.createRoomButton.interactable = false;
-      this.joinRoomButton.interactable = false;
-    }
-  }
-
-  onClickJoinRoom() {
-    if (this.playerNameInput.string.trim() === '') {
-      this.popupModal.active = true;
-      this.modalText.string = '請輸入玩家名稱';
-    } else {
-      this.panelStart.active = false;
-      this.panelJoin.active = true;
-    }
-  }
-
-  onClickAdd() {
-    if (this.roomIdInput.string.trim() === '') {
-      this.popupModal.active = true;
-      this.modalText.string = '請輸入房間ID';
-    } else {
-      // 發送加入房間 'join-room' 事件
-      GameManager.instance.sendMessageWithRoomId('join-room', {
-        roomId: this.roomIdInput.string,
-        playerName: this.playerNameInput.string
-      });
-      // 等待事件回應期間，將按鈕設為不可互動
-      this.addButton.interactable = false;
-      this.quitButton.interactable = false;
+      // Start singleplayer game directly
+      console.log(`Starting singleplayer game for: ${this.playerNameInput.string}`);
+      
+      // Store player name for later use (optional)
+      localStorage.setItem('playerName', this.playerNameInput.string);
+      
+      // Disable button during scene transition
+      this.startGameButton.interactable = false;
+      
+      // Load game scene directly (no room creation needed)
+      GameManager.instance.loadGameScene();
     }
   }
 
   onClickQuit() {
-    this.panelStart.active = true;
-    this.panelJoin.active = false;
+    // Quit application or return to main menu
+    console.log('Quit game');
+    // You can add quit logic here, such as:
+    // - Return to main menu
+    // - Close application
+    // - Show quit confirmation dialog
+    this.showPopupModal('感謝遊玩！');
   }
 
   onClickClose() {
@@ -118,17 +85,15 @@ export class StartSceneManager extends Component {
     this.modalText.string = '';
   }
 
-  showResponseFail(msg: string) {
+  // Helper method to show popup messages
+  showPopupModal(message: string) {
     this.popupModal.active = true;
-    this.modalText.string = msg;
+    this.modalText.string = message;
   }
 
-  stopAction() {
-    console.log('stopAction');
-    this.ErrorLabel.active = true;
-    this.createRoomButton.interactable = false;
-    this.joinRoomButton.interactable = false;
-    this.addButton.interactable = false;
-    this.quitButton.interactable = false;
+  // Show error when game fails to start
+  showGameStartError() {
+    this.showPopupModal('遊戲啟動失敗，請重試');
+    this.startGameButton.interactable = true;
   }
 }
