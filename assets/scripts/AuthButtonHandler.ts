@@ -180,7 +180,7 @@ export class AuthButtonHandler extends Component {
             const sfxNode = new Node('SFXAudioSource');
             const sfx = sfxNode.addComponent(AudioSource);
             sfx.clip = this.clickButtonSound;
-            sfx.volume = 1;
+            sfx.volume = 0.6;
             sfx.play();
             this.node.addChild(sfxNode);
             sfx.node.once(AudioSource.EventType.ENDED, () => {
@@ -206,7 +206,7 @@ export class AuthButtonHandler extends Component {
             const sfxNode = new Node('SFXAudioSource');
             const sfx = sfxNode.addComponent(AudioSource);
             sfx.clip = this.clickButtonSound;
-            sfx.volume = 1;
+            sfx.volume = 0.6;
             sfx.play();
             this.node.addChild(sfxNode);
             sfx.node.once(AudioSource.EventType.ENDED, () => {

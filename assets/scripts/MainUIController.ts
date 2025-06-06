@@ -21,6 +21,9 @@ export class MainUIController extends Component {
     @property(AudioClip)
     clickButtonSound: AudioClip = null;
 
+    @property(Node)
+    TankBGMNode: Node = null;
+
     private musicAudioSource: AudioSource | null = null;
 
     onLoad() {
@@ -46,6 +49,7 @@ export class MainUIController extends Component {
         if (!this.musicAudioSource) {
             this.musicAudioSource = this.node.getComponent(AudioSource);
         }
+        this.TankBGMNode = director.getScene().getChildByName('TankBGMController');
     }
 
 
@@ -67,10 +71,11 @@ export class MainUIController extends Component {
             if (this.musicAudioSource && this.clickButtonSound) {
                 this.musicAudioSource.playOneShot(this.clickButtonSound);
             }
+            director.removePersistRootNode(this.TankBGMNode);
             console.log('[MainUIController] Exit Button clicked.');
             setTimeout(() => {
                 director.loadScene('mainmenu');
-            }, 150);
+            }, 200);
         }
     }
 
