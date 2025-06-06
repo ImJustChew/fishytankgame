@@ -1,4 +1,4 @@
-import { _decorator, Component, Button } from 'cc';
+import { _decorator, Component, Button, AudioClip, AudioSource, Node } from 'cc';
 import { SettingsDialog } from './SettingsDialog';
 import { AudioManager } from './AudioManager';
 
@@ -18,6 +18,9 @@ export class SettingsButtonController extends Component {
     })
     private settingsDialog: SettingsDialog | null = null;
 
+    @property(AudioClip)
+    clickButtonSound: AudioClip = null;
+
     start() {
         this.setupEventListeners();
     }
@@ -31,6 +34,17 @@ export class SettingsButtonController extends Component {
     }
 
     private onSettingsButtonClick() {
+        if (this.clickButtonSound) {
+            const sfxNode = new Node('SFXAudioSource');
+            const sfx = sfxNode.addComponent(AudioSource);
+            sfx.clip = this.clickButtonSound;
+            sfx.volume = 1;
+            sfx.play();
+            this.node.addChild(sfxNode);
+            sfx.node.once(AudioSource.EventType.ENDED, () => {
+                sfxNode.destroy();
+            });
+        }
         // Play button click sound
         const audioManager = AudioManager.getInstance();
         if (audioManager) {

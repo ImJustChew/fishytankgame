@@ -1689,6 +1689,10 @@
       "b": 15,
       "a": 255
     },
+    "clickButtonSound": {
+      "__uuid__": "95b2e1cd-db8a-4947-b2e5-76d5f561942b",
+      "__expectedType__": "cc.AudioClip"
+    },
     "_id": "48fXLRnmpBeqf3NiatupE2"
   },
   {
@@ -3150,15 +3154,17 @@
     "usernameLabel": {
       "__id__": 53
     },
+    "clickButtonSound": {
+      "__uuid__": "95b2e1cd-db8a-4947-b2e5-76d5f561942b",
+      "__expectedType__": "cc.AudioClip"
+    },
     "signInContainer": {
       "__id__": 64
     },
     "userContainer": {
       "__id__": 50
     },
-    "usernameDialog": {
-      "__id__": 39
-    },
+    "usernameDialog": null,
     "_id": "03pfAVteJDlrFmfquYXGnK"
   },
   {
@@ -3540,6 +3546,10 @@
     },
     "settingsDialog": {
       "__id__": 85
+    },
+    "clickButtonSound": {
+      "__uuid__": "95b2e1cd-db8a-4947-b2e5-76d5f561942b",
+      "__expectedType__": "cc.AudioClip"
     },
     "_id": "a5SiKF9kVH2KikAw5TWlU3"
   },
