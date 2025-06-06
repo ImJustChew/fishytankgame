@@ -163,6 +163,7 @@ export class Fish extends Component {
     }
 
     public initializeFish(fishData: SavedFishType, tankBounds: { min: Vec3, max: Vec3 }) {
+        console.log('Initializing fish with data:', fishData.id);
         this.fishData = fishData;
         this.tankBounds = tankBounds;
         this.isGameFish = false; // This is a tank fish
@@ -307,17 +308,18 @@ export class Fish extends Component {
         if (timeSinceLastFed > this.hungerDecayInterval) {
             // Calculate how much health to decay based on time passed
             const timeOverHungerLimit = timeSinceLastFed - this.hungerDecayInterval;
-            const hoursOverLimit = timeOverHungerLimit / 3600; // Convert to hours
+            const minutesOverLimit = timeOverHungerLimit / 1; // Convert to minutes (/60)
 
             // Decay health gradually - only lose health every hour, not every frame
-            const healthDecayAmount = Math.floor(hoursOverLimit * this.hungerDecayRate);
-            const expectedHealth = this.getMaxHealth() - healthDecayAmount;
+            const healthDecayAmount = Math.floor(minutesOverLimit * this.hungerDecayRate);
+            const expectedHealth = Math.max(0.0, this.getMaxHealth() - healthDecayAmount);
 
             // Only update if the expected health is different from current health
             // This prevents constant database updates
             if (this.fishData.health > expectedHealth) {
                 const healthLoss = this.fishData.health - expectedHealth;
-                console.log(`Fish ${this.fishData.id} losing ${healthLoss} health due to hunger (${Math.floor(timeSinceLastFed / 3600)} hours since last fed)`);
+                //console.log(expectedHealth);
+                console.log(`Fish ${this.fishData.id} losing ${healthLoss} health due to hunger (${Math.floor(timeSinceLastFed / 60)} mins since last fed)`);
                 this.updateHealth(-healthLoss); // Use negative value to decrease health
             }
         }
@@ -329,6 +331,7 @@ export class Fish extends Component {
         // Update hunger or health or whatever logic you want
         this.updateHealth(foodType.health);
         this.updateLastFedTime(Date.now()) // get delta time
+        console.log(`Fish ${this.fishData?.id} ate ${foodType.name} and gained ${foodType.health} health`);
     }
 
     private isHittingBounds(): boolean {
@@ -385,19 +388,20 @@ export class Fish extends Component {
             }
 
             // Destroy fish if health reaches 0
-            if (this.fishData.health <= 0) {
+            /*if (this.fishData.health <= 0) {
                 console.log(`Fish ${this.fishData.id} died from low health`);
                 this.node.destroy();
-            }
+            }*/
         }
     }
 
     public updateLastFedTime(time: number) {
         if (this.fishData) {
             this.fishData.lastFedTime = time;
-
+            console.log(`Fish ${this.fishData.id} is goin to update last fed time to ${new Date(time).toLocaleString()}`);
             // Update the database with new lastFedTime
             if (this.fishData.id) {
+                console.log('=======');
                 databaseService.updateFish(this.fishData.id, { lastFedTime: time });
             }
         }
@@ -414,7 +418,7 @@ export class Fish extends Component {
             this.fishData.type = newFishData.type;
             this.fishData.ownerId = newFishData.ownerId;
 
-            console.log(`Updated fish data for fish ${this.fishData.id} without losing state`);
+            //console.log(`Updated fish data for fish ${this.fishData.id} without losing state`);
         }
     }
 

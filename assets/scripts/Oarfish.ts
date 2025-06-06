@@ -1,8 +1,8 @@
 import { _decorator, Component, Node, Vec3 } from 'cc';
 const { ccclass, property } = _decorator;
 
-@ccclass('CrabWalk')
-export class CrabWalk extends Component {
+@ccclass('Oarfish')
+export class Oarfish extends Component {
     @property(Node)
     CrabNode: Node = null;
 
@@ -53,6 +53,13 @@ export class CrabWalk extends Component {
         const startLeft = Math.random() < 0.5;
         const startX = startLeft ? this.leftX : this.rightX;
         const endX = startLeft ? this.rightX : this.leftX;
+        // get the only sprite component of CrabNode's children. and set it's scale.x
+        this.CrabNode.children.forEach(child => {
+            const sprite = child.getComponent('cc.Sprite');
+            if (sprite) {
+                child.setScale(startLeft ? -1 : 1, 1, 1); // 設定 node 的 scaleX
+            }
+        });
         this.CrabNode.setPosition(new Vec3(startX, this.CrabNode.position.y, this.CrabNode.position.z));
         this.CrabNode.active = false;
         this.moving = false;
