@@ -86,8 +86,7 @@ export class FishTankManager extends Component {
                         const sfxNode = new Node('SFXAudioSource');
                         const sfx = sfxNode.addComponent(AudioSource);
                         sfx.clip = this.eatFishFoodSound;
-                        const audioManager = AudioManager.getInstance();
-                        sfx.volume = audioManager ? audioManager.getSFXVolume() : 0.5;
+                        sfx.volume = AudioManager.getSFXVolume();
                         sfx.play();
                         this.node.addChild(sfxNode);
                         sfx.node.once(AudioSource.EventType.ENDED, () => {
@@ -386,7 +385,7 @@ export class FishTankManager extends Component {
             const sfxNode = new Node('SFXAudioSource');
             const sfx = sfxNode.addComponent(AudioSource);
             sfx.clip = this.fishFoodGenerationSound;
-            sfx.volume = AudioManager.getInstance()?.getSFXVolume() ?? 0.8;
+            sfx.volume = AudioManager.getSFXVolume();
             sfx.play();
             this.node.addChild(sfxNode);
             sfx.node.once(AudioSource.EventType.ENDED, () => {

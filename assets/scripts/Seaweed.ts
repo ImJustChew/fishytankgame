@@ -1,4 +1,5 @@
 import { _decorator, Component, Node, input, Input, EventMouse, Vec2, Vec3, math, AudioClip, AudioSource } from 'cc';
+import { AudioManager } from './AudioManager';
 const { ccclass, property } = _decorator;
 
 type SegmentState = {
@@ -24,25 +25,25 @@ export class Seaweed extends Component {
     maxHorizontalOffset: number = 10;
 
     @property
-    mouseInfluenceRadius: number = 20; 
+    mouseInfluenceRadius: number = 20;
 
     @property
-    disturbanceAmplitude: number = 15; 
+    disturbanceAmplitude: number = 15;
 
     @property
-    disturbanceFrequency: number = 3.0; 
+    disturbanceFrequency: number = 3.0;
 
     @property
-    recoverySpeed: number = 2.0; 
+    recoverySpeed: number = 2.0;
 
     @property(AudioClip)
     disturbanceSound: AudioClip | null = null;
 
     private states: SegmentState[] = [];
     private mousePos = new Vec2();
-    private isMouseNear = false; 
-    private disturbanceIntensity = 0; 
-    private canTrigger = true; 
+    private isMouseNear = false;
+    private disturbanceIntensity = 0;
+    private canTrigger = true;
     private baseTime = 0;
     private randomTimeOffset: number = 0;
     private mousePreviousPos = new Vec2();
@@ -51,13 +52,13 @@ export class Seaweed extends Component {
 
 
     onLoad() {
-        this.states = this.segments.map(() => ({ 
-            angle: 0, 
+        this.states = this.segments.map(() => ({
+            angle: 0,
             velocity: 0
         }));
         input.on(Input.EventType.MOUSE_MOVE, this.onMouseMove, this);
         this.baseTime = performance.now();
-        this.randomTimeOffset = Math.random() * 1000; 
+        this.randomTimeOffset = Math.random() * 1000;
         console.log(`Seaweed initialized with random time offset: ${this.randomTimeOffset}`);
     }
 
@@ -79,7 +80,7 @@ export class Seaweed extends Component {
     update(dt: number) {
         // Segment0 is fixed at the root position
         const rootPos = this.segments[0].getPosition();
-        this.segments[0].setPosition(rootPos); 
+        this.segments[0].setPosition(rootPos);
         let currentPos = rootPos;
 
         const worldPositions: Vec2[] = this.segments.map(seg => {
@@ -98,22 +99,22 @@ export class Seaweed extends Component {
         const mouseMoveDist = Vec2.distance(this.mousePos, this.mousePreviousPos);
 
 
-        if (mouseCurrentlyNear && 
-            !this.isMouseNear && 
+        if (mouseCurrentlyNear &&
+            !this.isMouseNear &&
             this.canTrigger &&
-            mouseMoveDist > 2) { 
+            mouseMoveDist > 2) {
             if (this.musicAudioSource && this.disturbanceSound) {
-                this.musicAudioSource.playOneShot(this.disturbanceSound);
+                this.musicAudioSource.playOneShot(this.disturbanceSound, AudioManager.getSFXVolume());
             }
-            if(this.disturbanceIntensity <= 1.6)
-                if(this.disturbanceIntensity == 0) {
+            if (this.disturbanceIntensity <= 1.6)
+                if (this.disturbanceIntensity == 0) {
                     this.disturbanceIntensity += 0.8;
                 } else {
                     this.disturbanceIntensity += 0.4;
                 }
-            this.canTrigger = false; 
+            this.canTrigger = false;
         } else if (!mouseCurrentlyNear && this.isMouseNear) {
-            this.canTrigger = true; 
+            this.canTrigger = true;
         }
 
         this.isMouseNear = mouseCurrentlyNear;
@@ -127,12 +128,12 @@ export class Seaweed extends Component {
 
         const targetAngles: number[] = [];
         const currentTime = performance.now();
-        
+
         for (let i = 0; i < this.segments.length; i++) {
             const naturalTime = (currentTime + this.randomTimeOffset) / 2000;
             const baseAmplitude = 8 + Math.sin(naturalTime + i) * 5;
             const naturalSway = Math.sin(naturalTime * 2 + i * 0.3) * baseAmplitude;
-            const disturbanceTime = (currentTime + this.randomTimeOffset) / 1000; 
+            const disturbanceTime = (currentTime + this.randomTimeOffset) / 1000;
             const disturbanceSway = Math.sin(disturbanceTime * this.disturbanceFrequency + i * 0.5) * this.disturbanceAmplitude;
             targetAngles[i] = naturalSway + disturbanceSway * this.disturbanceIntensity;
         }
