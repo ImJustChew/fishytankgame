@@ -672,6 +672,53 @@ class SocialService {
             attemptsRef.off('value', unsubscribe);
         };
     }
+
+
+    async getCurrentUserTankType(): Promise<number | null> {
+        const currentUser = authService.getCurrentUser();
+        if (!currentUser) {
+            console.warn('Cannot get tanktype: No user is signed in');
+            return null;
+        }
+        try {
+            const snapshot = await database.ref(`users/${currentUser.uid}/tanktype`).once('value');
+            const tanktype = snapshot.val();
+            return typeof tanktype === 'number' ? tanktype : null;
+        } catch (error) {
+            console.error('Error getting tanktype:', error);
+            return null;
+        }
+    }
+
+    async setCurrentUserTankType(tanktype: number): Promise<void> {
+        const currentUser = authService.getCurrentUser();
+        if (!currentUser) {
+            console.warn('Cannot set tanktype: No user is signed in');
+            return;
+        }
+        try {
+            await database.ref(`users/${currentUser.uid}/tanktype`).set(tanktype);
+            console.log(`Tanktype updated for user ${currentUser.uid}:`, tanktype);
+        } catch (error) {
+            console.error('Error setting tanktype:', error);
+        }
+    }
+
+    async getCurrentUserMoney(): Promise<number | null> {
+        const currentUser = authService.getCurrentUser();
+        if (!currentUser) {
+            console.warn('Cannot get money: No user is signed in');
+            return null;
+        }
+        try {
+            const snapshot = await database.ref(`users/${currentUser.uid}/money`).once('value');
+            const money = snapshot.val();
+            return typeof money === 'number' ? money : null;
+        } catch (error) {
+            console.error('Error getting money:', error);
+            return null;
+        }
+    }
 }
 
 const socialService = new SocialService();

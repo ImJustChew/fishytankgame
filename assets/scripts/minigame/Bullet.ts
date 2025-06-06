@@ -10,6 +10,10 @@ export class Bullet extends Component {
   @property(CCInteger)
   public speed: number = 1000;
 
+  // 子彈傷害 (based on bullet level)
+  @property(CCInteger)
+  public damage: number = 50;
+
   private _collider: Collider2D = null;
   private _limit: number = 700;
   private _directionVec3: Vec3 = new Vec3(0, 0, 0);
@@ -62,5 +66,20 @@ export class Bullet extends Component {
     const x = Math.cos(radian);
     const y = Math.sin(radian);
     this._directionVec3.set(x, y, 0).normalize();
+  }
+
+  // Set bullet damage based on bullet level
+  setBulletDamage(bulletLevel: number) {
+    switch (bulletLevel) {
+      case 1: this.damage = 30; break;
+      case 2: this.damage = 50; break;
+      case 3: this.damage = 80; break;
+      case 4: this.damage = 120; break;
+      case 5: this.damage = 180; break;
+      case 6: this.damage = 250; break;
+      case 7: this.damage = 350; break;
+      default: this.damage = 50; break;
+    }
+    console.log(`Bullet damage set to: ${this.damage} (level ${bulletLevel})`);
   }
 }

@@ -15,6 +15,7 @@ export type UserData = {
     email: string;
     username: string;
     money: number;
+    lastCalculatedMoney: number; // timestamp when money was last calculated
     lastCollectionTime: number;
     lastOnline: number;
     friends: {
@@ -92,6 +93,30 @@ class DatabaseService {
             console.error('Error setting user data:', error);
         }
     }
+    
+    /**
+     * Update a specific field in the user data
+     * @param field The field name to update
+     * @param value The new value for the field
+     * @returns Promise<void>
+     */
+    async updateUserField(field: keyof UserData, value: any): Promise<void> {
+        const user = authService.getCurrentUser();
+        if (!user) {
+            console.warn('Cannot update user field: No user is signed in');
+            return;
+        }
+
+        try {
+            const updates: Partial<Record<keyof UserData, any>> = {};
+            updates[field] = value;
+            
+            await database.ref(`users/${user.uid}`).update(updates);
+            console.log(`User field ${field} updated for user ${user.uid}:`, value);
+        } catch (error) {
+            console.error(`Error updating user field ${field}:`, error);
+        }
+    }
 
     async getSavedFish(): Promise<SavedFishType[] | null> {
         const user = authService.getCurrentUser();
@@ -141,7 +166,7 @@ class DatabaseService {
 
         try {
             await database.ref(`users/${user.uid}/fishes/${fishId}`).update(updates);
-            console.log(`Updated fish ${fishId} for user ${user.uid}:`, updates);
+            //console.log(`Updated fish ${fishId} for user ${user.uid}:`, updates);
         } catch (error) {
             console.error('Error updating fish:', error);
         }
@@ -197,6 +222,35 @@ class DatabaseService {
         // Return Firebase's off function
         return () => {
             fishRef.off('value', unsubscribe);
+        };
+    }
+
+    /**
+     * Subscribe to real-time user data updates using Firebase's callback
+     * @param callback Function to call when user data changes
+     * @returns Firebase unsubscribe function or null if user not signed in
+     */
+    onUserDataChanged(callback: (userData: UserData | null) => void): (() => void) | null {
+        const user = authService.getCurrentUser();
+        if (!user) {
+            console.warn('Cannot subscribe to user data: No user is signed in');
+            return null;
+        }
+
+        const userRef = database.ref(`users/${user.uid}`);
+
+        const unsubscribe = userRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            console.log(`User data updated for user ${user.uid}:`, data);
+            callback(data);
+        }, (error) => {
+            console.error('Error in user data listener:', error);
+            callback(null);
+        });
+
+        // Return Firebase's off function
+        return () => {
+            userRef.off('value', unsubscribe);
         };
     }
 
@@ -287,6 +341,7 @@ class DatabaseService {
             email: email,
             username: username,
             money: INITIAL_MONEY,
+            lastCalculatedMoney: Date.now(),
             lastCollectionTime: Date.now(),
             lastOnline: Date.now(),
             friends: {},
@@ -302,7 +357,8 @@ class DatabaseService {
                 lotteryTickets: 0,
                 totalBattles: 0,
                 totalWins: 0
-            }
+            },
+            // tanktype: INITIAL_TANK,
         };
 
         try {

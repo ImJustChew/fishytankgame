@@ -12,20 +12,21 @@ export class FishPool {
 
   // 取得一個魚隻
   getFish(): Node {
-    // 如果有停用的魚隻，就從停用的 pool 中取出
+    console.log('FishPool getFish: inactive count =', this.inactivePool.size);
+    
+    let fish: Node;
+    
     if (this.inactivePool.size > 0) {
-      for (const fish of this.inactivePool) {
-        // 標記成 active
-        this.markAsActive(fish);
-        // 回傳
-        return fish;
-      }
+      fish = Array.from(this.inactivePool)[0];
+      this.markAsActive(fish);
+      console.log('Reused fish from pool');
     } else {
-      // 如果沒有，就從 pool 中取出一個新的魚隻
-      const fish = instantiate(this._prefab);
-      // 回傳
-      return fish;
+      fish = instantiate(this._prefab);
+      console.log('Created new fish, prefab =', this._prefab);
     }
+    
+    console.log('Returning fish:', fish);
+    return fish;
   }
 
   // 回收一個魚隻

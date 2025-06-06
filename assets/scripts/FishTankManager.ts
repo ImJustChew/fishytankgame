@@ -155,6 +155,13 @@ export class FishTankManager extends Component {
         
         // Set up money listener
         this.setupMoneyListener();
+        //this.spawnDefaultFish();
+
+        // Initialize player system
+        this.initializePlayerSystem();
+
+        // Listen for mouse/touch clicks
+        input.on(Input.EventType.TOUCH_END, this.onClickEnd, this);
     }
     /**
      * Set up real-time listener for fish data changes
@@ -200,7 +207,7 @@ export class FishTankManager extends Component {
             // Clear all fish when no data is received
             this.fishTank.clearAllFish();
             // Optionally spawn default fish for testing
-            this.spawnDefaultFish();
+            //this.spawnDefaultFish();
         }
     }
 
@@ -227,7 +234,7 @@ export class FishTankManager extends Component {
                 // Debug: Check if fish types match FISH_LIST IDs
                 const fishListIds = FISH_LIST.map(fish => fish.id);
                 for (const fish of savedFish) {
-                    console.log(`[FishTankManager] Fish type: "${fish.type}", exists in FISH_LIST: ${fishListIds.includes(fish.type)}`);
+                    console.log(`[FishTankManager] Fish type: "${fish.type}", exists in FISH_LIST: ${fishListIds.indexOf(fish.type) !== -1}`);
                 }
                 
                 if (preserveExisting) {
@@ -240,12 +247,12 @@ export class FishTankManager extends Component {
             } else {
                 console.log('No saved fish found in database');
                 // Optionally spawn some default fish for testing
-                this.spawnDefaultFish();
+                //this.spawnDefaultFish();
             }
         } catch (error) {
             console.error('Error loading fish from database:', error);
             // Fallback to default fish
-            this.spawnDefaultFish();
+            //this.spawnDefaultFish();
         }
     }
 

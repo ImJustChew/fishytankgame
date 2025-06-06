@@ -1,48 +1,27 @@
 import {
   _decorator,
-  Animation,
   Component,
   director,
   Label,
   Node,
   Tween,
-  tween
+  tween,
+  Color
 } from 'cc';
 import { EventManager } from './EventManager';
-import { ClientObject } from './types';
-// import { GameManager } from './GameManager';
+import { FishConfig, FishType } from './types/index.d';
 const { ccclass, property } = _decorator;
-
-const bulletValues = {
-  1: 100,
-  2: 300,
-  3: 500,
-  4: 1000,
-  5: 2000,
-  6: 5000,
-  7: 10000
-};
 
 @ccclass('GameSceneManager')
 export class GameSceneManager extends Component {
-  @property(Node)
-  public otherPlayerNode: Node = null;
-  @property(Node)
-  public otherPlayerUI: Node = null;
-  @property(Node)
-  public otherGunBody: Node = null;
-  @property(Animation)
-  public otherGunBodyAnimation: Animation = null;
-  @property(Label)
-  public otherPlayerNameLabel: Label = null;
-  @property(Label)
-  public playerNameLabel: Label = null;
   @property(Label)
   public playerPointLabel: Label = null;
   @property(Label)
-  public roomIdLabel: Label = null;
-  @property(Label)
   public bulletValueLabel: Label = null;
+  @property(Label)
+  public timerLabel: Label = null;
+  @property(Label)
+  public scoreLabel: Label = null; // ✅ ADD SCORE LABEL
   @property(Node)
   public popupModal: Node = null;
   @property(Label)
@@ -50,35 +29,163 @@ export class GameSceneManager extends Component {
 
   public bulletLevel: number = 3;
   public point: number = 0;
+  public score: number = 0; // ✅ ADD SCORE PROPERTY
+  
+  // ✅ ADD TIMER SYSTEM
+  public gameTime: number = 30; // 30 seconds
+  public remainingTime: number = 30;
+  public isGameActive: boolean = false;
+  
   private _isTransition: boolean = false;
-  // 為了讓 tween 能夠執行 point，必須使用物件封裝
-  private _tempPoint: Record<string, number> = {
-    point: 0
-  };
+  private _tempPoint: Record<string, number> = { point: 0 };
+  private _tempScore: Record<string, number> = { score: 0 }; // ✅ ADD SCORE TRANSITION
   private _tempTween: Tween = null;
-  // 為了避免有動畫期間導致 this.point 尚未處於不動狀態，使用 this._cachedPoint 來暫存
+  private _scoreTween: Tween = null; // ✅ ADD SCORE TWEEN
   private _cachedPoint: number = 0;
 
+  // ✅ ADD CUSTOM PADDING FUNCTION
+  private padZero(num: number, length: number = 2): string {
+    let str = num.toString();
+    while (str.length < length) {
+      str = '0' + str;
+    }
+    return str;
+  }
+
   protected onLoad(): void {
-    // console.log('GameSceneManager onLoad');
     // 註冊事件
     EventManager.eventTarget.on('init-game-scene', this.initGameScene, this);
-    EventManager.eventTarget.on('player-joined', this.welcomeOtherPlayer, this);
-    EventManager.eventTarget.on('player-left', this.removeOtherPlayer, this);
-    EventManager.eventTarget.on('rotate-gun', this.rotateGun, this);
-    EventManager.eventTarget.on('fire-gun', this.fireGun, this);
-    /*
-    EventManager.eventTarget.on(
-      'before-fire-bullet',
-      this.beforeFireBullet,
-      this
-    );
-    EventManager.eventTarget.on('before-hit-fish', this.beforeHitFish, this);
-    */
     EventManager.eventTarget.on('update-point', this.updatePoint, this);
     EventManager.eventTarget.on('show-fire-fail', this.showFireFail, this);
-    // EventManager.eventTarget.on('websocket-disconnect', this.stopGame, this);
-    EventManager.eventTarget.on('room-timeout', this.stopGame, this);
+    EventManager.eventTarget.on('add-points', this.addPoints, this); // Handle point awards
+    EventManager.eventTarget.on('add-score', this.addScore, this); // ✅ ADD SCORE EVENT
+
+    this.initGameScene();
+  }
+
+  initGameScene(): void {
+    console.log('GameSceneManager initGameScene - Singleplayer Mode with Timer');
+    
+    // Initialize singleplayer game state
+    this.point = 0; // Start with 0 points
+    this.score = 0; // ✅ INITIALIZE SCORE
+    this._cachedPoint = 0;
+    this.playerPointLabel.string = `${this.point}`;
+    this.scoreLabel.string = `Score: ${this.score}`; // ✅ INITIALIZE SCORE DISPLAY
+    this.bulletLevel = 3;
+    this.bulletValueLabel.string = `Level ${this.bulletLevel}`;
+    
+    // ✅ INITIALIZE TIMER
+    this.remainingTime = this.gameTime;
+    this.isGameActive = true;
+    this.updateTimerDisplay();
+    
+    // Start countdown
+    this.startGameTimer();
+    
+    // Spawn initial fish
+    this.spawnFishes();
+    
+    // Schedule periodic fish spawning
+    this.schedule(this.spawnFishes, 5); // Spawn new fish every 5 seconds
+    
+    // ✅ ENABLE FREE SHOOTING
+    EventManager.eventTarget.emit('switch-can-fire', true);
+  }
+
+  // ✅ ADD TIMER SYSTEM
+  startGameTimer() {
+    // Update timer every second
+    this.schedule(this.updateTimer, 1);
+  }
+
+  updateTimer() {
+    if (!this.isGameActive) return;
+    
+    this.remainingTime--;
+    this.updateTimerDisplay();
+    
+    // Check if time is up
+    if (this.remainingTime <= 0) {
+      this.timeUp();
+    }
+  }
+
+  // ✅ FIXED updateTimerDisplay with custom padding
+  updateTimerDisplay() {
+    if (this.timerLabel) {
+      const minutes = Math.floor(this.remainingTime / 60);
+      const seconds = this.remainingTime % 60;
+      
+      // Use custom padZero function instead of padStart
+      this.timerLabel.string = `${this.padZero(minutes)}:${this.padZero(seconds)}`;
+      
+      // Change color when time is running low
+      if (this.remainingTime <= 10) {
+        this.timerLabel.color = new Color(255, 0, 0, 255); // Red
+      } else if (this.remainingTime <= 30) {
+        this.timerLabel.color = new Color(255, 255, 0, 255); // Yellow
+      } else {
+        this.timerLabel.color = new Color(255, 255, 255, 255); // White
+      }
+    }
+  }
+
+  // ✅ HANDLE TIME UP
+  timeUp() {
+    console.log('Time is up!');
+    this.isGameActive = false;
+    
+    // Stop all timers
+    this.unschedule(this.updateTimer);
+    this.unschedule(this.spawnFishes);
+    
+    // ✅ STOP ALL FISH MOVEMENT
+    EventManager.eventTarget.emit('stop-all-fish');
+    
+    // Disable shooting
+    EventManager.eventTarget.emit('switch-can-fire', false);
+    
+    // Show time up popup
+    this.showTimeUpPopup();
+  }
+
+  showTimeUpPopup() {
+    const finalScore = this.score; // ✅ USE SCORE INSTEAD OF POINTS
+    this.showPopupModal(`Time's Up！\nFinal Score: ${finalScore}`);
+  }
+
+  spawnFishes() {
+    if (!this.isGameActive) return; // Don't spawn fish when game is over
+    
+    const fishes = this.generateFishes(5);
+    EventManager.eventTarget.emit('spawn-fishes', fishes);
+    console.log('Spawned fishes:', fishes);
+  }
+
+  generateFishes(count: number): FishConfig[] {
+    const fishes: FishConfig[] = [];
+    for (let i = 0; i < count; i++) {
+      const fishTypeNum = Math.floor(Math.random() * 5) + 1;
+      const fishId = `fish_0${fishTypeNum}`;
+      
+      fishes.push({
+        uuid: `${Date.now()}_${i}_${Math.floor(Math.random() * 10000)}`,
+        id: fishId,
+        name: `Fish ${fishTypeNum}`,
+        level: Math.floor(Math.random() * 3) + 1,
+        speed: 100 + Math.random() * 100,
+        radiusW: 50,
+        radiusH: 30,
+        spawnX: 1350,
+        spawnY: Math.random() * 400 - 200,
+        spawnTime: Date.now(),
+        maxLifeTime: 20,
+        isActive: true,
+      });
+    }
+    console.log('🎲 Generated fish IDs:', fishes.map(f => f.id));
+    return fishes;
   }
 
   protected update(dt: number): void {
@@ -87,182 +194,105 @@ export class GameSceneManager extends Component {
       this.playerPointLabel.string = `${Math.floor(this._tempPoint.point)}`;
       this.point = Math.floor(this._tempPoint.point);
     }
+    
+    // ✅ UPDATE SCORE DISPLAY
+    if (this._scoreTween && this._scoreTween.running) {
+      this.scoreLabel.string = `Score: ${Math.floor(this._tempScore.score)}`;
+      this.score = Math.floor(this._tempScore.score);
+    }
   }
 
   protected onDestroy(): void {
     // 註銷事件
     EventManager.eventTarget.off('init-game-scene', this.initGameScene, this);
-    EventManager.eventTarget.off(
-      'player-joined',
-      this.welcomeOtherPlayer,
-      this
-    );
-    EventManager.eventTarget.off('player-left', this.removeOtherPlayer, this);
-    EventManager.eventTarget.off('rotate-gun', this.rotateGun, this);
-    EventManager.eventTarget.off('fire-gun', this.fireGun, this);
-    /*
-    EventManager.eventTarget.off(
-      'before-fire-bullet',
-      this.beforeFireBullet,
-      this
-    );
-    EventManager.eventTarget.off('before-hit-fish', this.beforeHitFish, this);
-    */
     EventManager.eventTarget.off('update-point', this.updatePoint, this);
     EventManager.eventTarget.off('show-fire-fail', this.showFireFail, this);
-    // EventManager.eventTarget.off('websocket-disconnect', this.stopGame, this);
-    EventManager.eventTarget.off('room-timeout', this.stopGame, this);
+    EventManager.eventTarget.off('add-points', this.addPoints, this);
+    EventManager.eventTarget.off('add-score', this.addScore, this); // ✅ UNREGISTER SCORE EVENT
+    
+    // Unschedule all timers
+    this.unschedule(this.spawnFishes);
+    this.unschedule(this.updateTimer);
   }
 
-  initGameScene(data: ClientObject) {
-    // console.log('GameSceneManager initGameScene');
-    if (data) {
-      // this.roomIdLabel.string = `房號: ${data.roomId}`;
-      // this.playerNameLabel.string = `${data.playerName}`;
-      // 另外紀錄數值，因為需要播放動畫
-      this.point = data.point;
-      this._cachedPoint = data.point;
-      this.playerPointLabel.string = `${this.point}`;
-      if (data.other) {
-        this.addOtherPlayer(data.other);
-      }
-      // 初始化子彈價值
-      this.bulletValueLabel.string = `${bulletValues[this.bulletLevel]}`;
-      // 同步當前的魚群
-      if (data.fishes && data.fishes.length > 0) {
-        this.scheduleOnce(() => {
-          EventManager.eventTarget.emit('spawn-fishes', data.fishes);
-        }, 0);
-      }
+  // Add points to player score (keep for compatibility)
+  addPoints(points: number) {
+    if (!this.isGameActive) return; // Don't add points when game is over
+    
+    const newTotal = this.point + points;
+    this.updatePoint(newTotal, true);
+    
+    // ✅ ALSO ADD TO SCORE
+    this.addScore(points);
+  }
+
+  // ✅ ADD SCORE SYSTEM
+  addScore(points: number) {
+    if (!this.isGameActive) return; // Don't add score when game is over
+    
+    const newScore = this.score + points;
+    this.updateScore(newScore, true);
+    console.log(`Score increased by ${points}! Total: ${newScore}`);
+  }
+
+  // ✅ ADD SCORE UPDATE METHOD
+  updateScore(newScore: number, animated: boolean = false) {
+    if (this._scoreTween && this._scoreTween.running) {
+      this._scoreTween.stop();
+    }
+    
+    if (animated) {
+      this._tempScore.score = this.score;
+      this._scoreTween = tween(this._tempScore)
+        .delay(0.2) // Small delay for visual effect
+        .to(0.5, { score: newScore })
+        .call(() => {
+          this.scoreLabel.string = `Score: ${newScore}`;
+          this.score = newScore;
+          this._scoreTween = null;
+        })
+        .start();
     } else {
-      console.error('initGameScene data is null');
+      this.score = newScore;
+      this.scoreLabel.string = `Score: ${newScore}`;
     }
   }
 
+  // Simplified affordability check (always true during game time)
+  checkAffordability() {
+    EventManager.eventTarget.emit('switch-can-fire', this.isGameActive);
+  }
+
   onClickClose() {
-    // 關閉視窗
     this.popupModal.active = false;
     this.modalText.string = '';
   }
 
   onClickConfirm() {
-    // 關閉視窗
     this.popupModal.active = false;
     this.modalText.string = '';
+    
+    // Return to start scene after confirming time up
+    if (!this.isGameActive) {
+      this.onClickQuitRoom();
+    }
   }
 
   onClickQuitRoom() {
-    // 發送離開房間 'leave-room' 事件 (玩家的名字讓伺服器自己傳)
-    // GameManager.instance.sendMessage('leave-room', null);
-    // 離開遊戲場景(可以先還原一些狀態)
     this.scheduleOnce(() => {
-      this.removeOtherPlayer();
-      this.playerNameLabel.string = '';
       this.playerPointLabel.string = '';
-      this.roomIdLabel.string = '';
+      this.scoreLabel.string = 'Score: 0'; // ✅ RESET SCORE DISPLAY
       this.popupModal.active = false;
       director.loadScene('01-start-scene', (err, scene) => {
-        // console.log('StartScene 加載成功');
-        // response.data 是完整的自己的玩家資料
-        EventManager.eventTarget.emit('init-start-scene');
+        if (!err) {
+          console.log('Returned to start scene');
+          EventManager.eventTarget.emit('init-start-scene');
+        }
       });
     }, 0.5);
   }
 
-  onClickPlus() {
-    if (this.bulletLevel < 7) {
-      this.bulletLevel++;
-      this.bulletValueLabel.string = `${bulletValues[this.bulletLevel]}`;
-      // this.checkPoint(this._cachedPoint);
-    }
-  }
-
-  onClickMinus() {
-    if (this.bulletLevel > 1) {
-      this.bulletLevel--;
-      this.bulletValueLabel.string = `${bulletValues[this.bulletLevel]}`;
-      // this.checkPoint(this._cachedPoint);
-    }
-  }
-
-  welcomeOtherPlayer(otherPlayerName: string) {
-    EventManager.eventTarget.emit('show-toast', `${otherPlayerName} 加入房間`);
-    this.addOtherPlayer(otherPlayerName);
-  }
-
-  addOtherPlayer(otherPlayerName: string) {
-    // console.log('GameSceneManager addOtherPlayer');
-    if (otherPlayerName) {
-      this.otherPlayerNode.active = true;
-      this.otherPlayerUI.active = true;
-      this.otherPlayerNameLabel.string = `${otherPlayerName}`;
-    }
-  }
-
-  removeOtherPlayer(otherPlayerName: string = '') {
-    // console.log('GameSceneManager removeOtherPlayer');
-    if (otherPlayerName !== '') {
-      EventManager.eventTarget.emit(
-        'show-toast',
-        `${otherPlayerName} 離開房間`
-      );
-    }
-    this.otherPlayerNode.active = false;
-    this.otherPlayerUI.active = false;
-    this.otherPlayerNameLabel.string = '';
-  }
-
-  // 這個方法是用來控制其他玩家的槍管，自己的槍管不會被這個方法控制
-  rotateGun(angle: string) {
-    // 這裡的 angle 是一個範圍在 20 到 160 之間的數字，角度的算法如下
-    this.otherGunBody.angle = 180 - Number(angle);
-  }
-
-  // 這個方法是用來控制其他玩家的槍管擊發動畫，自己的槍管不會被這個方法控制
-  fireGun() {
-    // console.log('fireGun');
-    // 播放開火動畫
-    if (this.otherGunBodyAnimation) this.otherGunBodyAnimation.play();
-  }
-
-  /*
-  // 在擊發子彈前，發送消耗點數事件給伺服器
-  beforeFireBullet() {
-    GameManager.instance.sendMessageWithRoomId('fire-bullet', {
-      bulletValue: bulletValues[this.bulletLevel]
-    });
-  }
-  */
-
-  /*
-  // 這個方法是用來接魚的 uuid 和這裡的 bulletValue 一起發送給伺服器
-  beforeHitFish(uuid: string) {
-    GameManager.instance.sendMessageWithRoomId('hit-fish', {
-      uuid,
-      bulletValue: bulletValues[this.bulletLevel]
-    });
-  }
-  */
-
-  // 判斷當前點數，執行對應措施
-  /*
-  checkPoint(currentPoint: number) {
-    if (currentPoint <= 0) {
-      this.showPopupModal('點數不足，遊戲結束！');
-    }
-    if (currentPoint < bulletValues[this.bulletLevel]) {
-      EventManager.eventTarget.emit('switch-can-fire', false);
-    } else {
-      EventManager.eventTarget.emit('switch-can-fire', true);
-    }
-  }
-    */
-
-  // 這個方法是用來更新玩家的點數
   updatePoint(currentPoint: number, delay: boolean) {
-    // 如果是中獎的點數更新 delay 為 true，因為要等金幣動畫結束
-    // this.checkPoint(currentPoint);
-    // 確認 tween 是否存在，並且運行中
     if (this._tempTween && this._tempTween.running) {
       this._tempTween.stop();
     }
@@ -273,7 +303,6 @@ export class GameSceneManager extends Component {
       .delay(delay ? 0.8 : 0)
       .to(0.3, { point: currentPoint })
       .call(() => {
-        // 動畫狀態關閉
         this._isTransition = false;
         this.playerPointLabel.string = `${currentPoint}`;
         this.point = currentPoint;
@@ -281,19 +310,22 @@ export class GameSceneManager extends Component {
       .start();
   }
 
-  // 顯示開火失敗的警告
   showFireFail() {
-    this.showPopupModal('點數不足，請減少子彈等級');
+    if (!this.isGameActive) {
+      this.showPopupModal('Game Over!');
+    }
   }
 
-  // 顯示彈出視窗
   showPopupModal(text: string) {
     this.popupModal.active = true;
     this.modalText.string = text;
   }
 
-  // 停止遊戲
-  stopGame(msg: string) {
-    this.showPopupModal(msg);
+  // ✅ ADD RESTART GAME METHOD
+  restartGame() {
+    this.isGameActive = false;
+    this.unschedule(this.updateTimer);
+    this.unschedule(this.spawnFishes);
+    this.initGameScene();
   }
 }

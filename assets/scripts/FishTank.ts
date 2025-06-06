@@ -17,7 +17,7 @@ const { ccclass, property } = _decorator;
 export class FishTank extends Component {
 
     @property
-    maxFishCount: number = 10;
+    maxFishCount: number = 30;
 
     @property
     maxFishFoodCount: number = 20;
@@ -201,7 +201,8 @@ export class FishTank extends Component {
             });
 
             if (existingFish) {
-                // Update existing fish data
+                // Update existing fish data without losing position
+                //console.log(`Updating existing fish ${newFishData.id} data`);
                 existingFish.updateFishData(newFishData);
                 console.log(`Updated existing fish ${newFishData.id}`);
             } else {
@@ -212,7 +213,8 @@ export class FishTank extends Component {
         });
     }
 
-    public spawnFish(fishData: SavedFishType, fishManager?: FishManager): Fish | null {
+    public spawnFish(fishData: SavedFishType, fishManager: FishManager): Fish | null {
+        //console.log(`Attempting to spawn fish: ${fishData.type} with ID: ${fishData.id}`);
         if (this.activeFish.length >= this.maxFishCount) {
             console.warn('Maximum fish count reached, cannot spawn more fish');
             return null;
@@ -273,6 +275,7 @@ export class FishTank extends Component {
         }
 
         // Initialize the fish with data and bounds
+        console.log(`Spawning fish: ${fishData.type} with ID: ${fishData.id}`);
         fishComponent.initializeFish(fishData, this.tankBounds);
 
         // Add to active fish array
