@@ -146,6 +146,7 @@ export class FishTank extends Component {
     }
 
     public spawnFish(fishData: SavedFishType, fishManager: FishManager): Fish | null {
+        //console.log(`Attempting to spawn fish: ${fishData.type} with ID: ${fishData.id}`);
         if (this.activeFish.length >= this.maxFishCount) {
             console.warn('Maximum fish count reached, cannot spawn more fish');
             return null;
@@ -176,6 +177,7 @@ export class FishTank extends Component {
         }
 
         // Initialize the fish with data and bounds
+        console.log(`Spawning fish: ${fishData.type} with ID: ${fishData.id}`);
         fishComponent.initializeFish(fishData, this.tankBounds);
 
         // Add to active fish array

@@ -83,37 +83,21 @@ export class TankDecorationController extends Component {
 
     toggleDecoration(cur_idx: number) {
         if (cur_idx === 0) {
-            if(this.background0){
+            if(this.background0 && this.decoration0 && this.decoration1 && this.decoration1_oarfish && this.background1){
                 this.background0.active = true;
-            }
-            if(this.decoration0){
                 this.decoration0.active = true;
-            }
-            if(this.decoration1){
                 this.decoration1.active = false;
-            }
-            if(this.decoration1_oarfish){
                 this.decoration1_oarfish.active = false;
-            }
-            if(this.background1){
                 this.background1.active = false;
             }
         }
         else if (cur_idx === 1) {
-            if(this.background1){
-                this.background1.active = true;
-            }
-            if(this.decoration1_oarfish){
-                this.decoration1_oarfish.active = true;
-            }
-            if(this.decoration1){
+            if(this.background1 && this.decoration1 && this.decoration1_oarfish && this.background0 && this.decoration0){
                 this.decoration1.active = true;
-            }
-            if(this.decoration0){
-                this.decoration0.active = false;
-            }
-            if(this.background0){
+                this.decoration1_oarfish.active = true;
+                this.background1.active = true;
                 this.background0.active = false;
+                this.decoration0.active = false;
             }
         }
         this.currentDecorationIndex = cur_idx;
