@@ -1,4 +1,4 @@
-import { _decorator, Component, Node, input, Input, EventTouch, Camera, Vec3, UITransform } from 'cc';
+import { _decorator, Component, Node, input, Input, EventTouch, Camera, Vec3, UITransform, AudioClip, AudioSource, tween } from 'cc';
 import { FishTank } from './FishTank';
 import { FishManager } from './FishManager';
 import { FishFoodManager } from './FishFoodManager';
@@ -38,6 +38,18 @@ export class FishTankManager extends Component {
     @property(FriendListPanel)
     friendListPanel: FriendListPanel = null;
 
+    @property(AudioClip)
+    backgroundMusic: AudioClip | null = null;
+
+    @property(AudioClip)
+    fishFoodGenerationSound: AudioClip | null = null;
+
+    @property(AudioClip)
+    eatFishFoodSound: AudioClip | null = null;
+
+    private musicAudioSource: AudioSource | null = null;
+
+
     update(deltaTime: number) {
         // check for collision of fish and food (eating) 
         for (const food of this.fishTank.getActiveFishFood()) {
@@ -45,6 +57,17 @@ export class FishTankManager extends Component {
                 if (this.isFoodNearFish(food.node, fish.node)) {
                     fish.eatFood(food.getFoodType());
                     food.destroyFood();
+                    if (this.eatFishFoodSound) {
+                        const sfxNode = new Node('SFXAudioSource');
+                        const sfx = sfxNode.addComponent(AudioSource);
+                        sfx.clip = this.eatFishFoodSound;
+                        sfx.volume = 0.4;
+                        sfx.play();
+                        this.node.addChild(sfxNode);
+                        sfx.node.once(AudioSource.EventType.ENDED, () => {
+                            sfxNode.destroy();
+                        });
+                    }
                     break; // One fish eats one food
                 }
             }
@@ -76,6 +99,25 @@ export class FishTankManager extends Component {
 
     }
 
+
+    private playBackgroundMusicWithFadeIn() {
+        console.log('Playing background music with fade-in effect');
+        if (!this.backgroundMusic) return;
+        if (!this.musicAudioSource) {
+            this.musicAudioSource = this.node.getComponent(AudioSource);
+        }
+        console.log('Music AudioSource:', this.musicAudioSource);
+
+        this.musicAudioSource.clip = this.backgroundMusic;
+        this.musicAudioSource.loop = true;
+        this.musicAudioSource.volume = 0; 
+        this.musicAudioSource.play();
+
+        tween(this.musicAudioSource)
+            .to(3, { volume: 0.2 })
+            .start();
+    }
+
     private isFoodNearFish(foodNode: Node, fishNode: Node): boolean {
         const foodPos = foodNode.getWorldPosition();
         const fishPos = fishNode.getWorldPosition();
@@ -84,6 +126,9 @@ export class FishTankManager extends Component {
     }
 
     private unsubscribeFishData: (() => void) | null = null; start() {
+
+        this.playBackgroundMusicWithFadeIn();
+
         if (this.autoLoadFish) {
             this.setupFishDataListener();
         } else {
@@ -305,6 +350,17 @@ export class FishTankManager extends Component {
         this.fishTank.spawnFishFood(currentFoodType, spawnLocation, this.fishFoodManager);
         console.log('Spawned default fish food for testing');
         console.log('Touch position:', touchPos);
+        if (this.fishFoodGenerationSound) {
+            const sfxNode = new Node('SFXAudioSource');
+            const sfx = sfxNode.addComponent(AudioSource);
+            sfx.clip = this.fishFoodGenerationSound;
+            sfx.volume = 1;
+            sfx.play();
+            this.node.addChild(sfxNode);
+            sfx.node.once(AudioSource.EventType.ENDED, () => {
+                sfxNode.destroy();
+            });
+        }
     }
 
     private cleanup() {
