@@ -1,5 +1,6 @@
 import { _decorator, AudioClip, AudioSource, Component } from 'cc';
 import { MusicClipType, SoundClipType } from './types/index.d';
+import { AudioManager as MainAudioManager } from '../AudioManager';
 const { ccclass, property } = _decorator;
 
 @ccclass('AudioManager')
@@ -55,7 +56,7 @@ export class AudioManager extends Component {
     }
   }
 
-  playSound(index: SoundClipType, volume: number = 0.5) {
+  playSound(index: SoundClipType, volume: number = MainAudioManager.getSFXVolume()) {
     if (this.soundSource && this.soundClips[index]) {
       this.soundSource.volume = volume;
       this.soundSource.playOneShot(this.soundClips[index]);
@@ -75,8 +76,8 @@ export class AudioManager extends Component {
 
   playSoundWithSource(sound: AudioClip) {
     // 可由外部的腳本傳入音效
-    if (AudioClip) {
-      this.soundSource.playOneShot(sound);
+    if (sound) {
+      this.soundSource.playOneShot(sound, MainAudioManager.getSFXVolume());
     } else {
       console.error('AudioManager: Sound source or clip not found');
     }

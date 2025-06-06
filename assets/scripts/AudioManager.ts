@@ -41,13 +41,85 @@ export class AudioManager extends Component {
 
     static getInstance(): AudioManager | null {
         return AudioManager.instance;
-    } onLoad() {
+    }
+
+    // Static methods to access BGM volume without instance
+    static getBGMVolume(): number {
+        const instance = AudioManager.getInstance();
+        if (instance) {
+            return instance.getBGMVolume();
+        }
+        // Fallback: read directly from localStorage
+        const saved = sys.localStorage.getItem('fishytank_bgm_volume');
+        return saved !== null ? parseFloat(saved) : 0.7;
+    }
+
+    static setBGMVolume(volume: number): void {
+        const instance = AudioManager.getInstance();
+        if (instance) {
+            instance.setBGMVolume(volume);
+        } else {
+            // Fallback: save directly to localStorage
+            const clampedVolume = Math.max(0, Math.min(1, volume));
+            sys.localStorage.setItem('fishytank_bgm_volume', clampedVolume.toString());
+        }
+    }
+
+    static getSFXVolume(): number {
+        const instance = AudioManager.getInstance();
+        if (instance) {
+            return instance.getSFXVolume();
+        }
+        // Fallback: read directly from localStorage
+        const saved = sys.localStorage.getItem('fishytank_sfx_volume');
+        return saved !== null ? parseFloat(saved) : 0.8;
+    }
+
+    static setSFXVolume(volume: number): void {
+        const instance = AudioManager.getInstance();
+        if (instance) {
+            instance.setSFXVolume(volume);
+        } else {
+            // Fallback: save directly to localStorage
+            const clampedVolume = Math.max(0, Math.min(1, volume));
+            sys.localStorage.setItem('fishytank_sfx_volume', clampedVolume.toString());
+        }
+    }
+
+    static isBGMEnabled(): boolean {
+        const instance = AudioManager.getInstance();
+        if (instance) {
+            return instance.isBGMEnabled();
+        }
+        // Fallback: read directly from localStorage
+        const saved = sys.localStorage.getItem('fishytank_bgm_enabled');
+        return saved !== null ? saved === 'true' : true;
+    }
+
+    static setBGMEnabled(enabled: boolean): void {
+        const instance = AudioManager.getInstance();
+        if (instance) {
+            instance.setBGMEnabled(enabled);
+        } else {
+            // Fallback: save directly to localStorage
+            sys.localStorage.setItem('fishytank_bgm_enabled', enabled.toString());
+        }
+    }
+
+    onLoad() {
         // Singleton pattern
         if (AudioManager.instance) {
             this.destroy();
             return;
         }
         AudioManager.instance = this;
+
+        // Make this node persist across scenes
+        // @ts-ignore - Cocos Creator specific method
+        if (this.node.addComponent && typeof game !== 'undefined') {
+            // @ts-ignore
+            game.addPersistRootNode(this.node);
+        }
 
         // Create audio sources programmatically
         this.createAudioSources();
@@ -57,12 +129,16 @@ export class AudioManager extends Component {
 
         // Apply settings to audio sources
         this.applyAudioSettings();
-    } start() {
+    }
+
+    start() {
         // Start playing background music if enabled
         if (this.audioSettings.bgmEnabled && this.bgmClips.length > 0) {
             this.playBGM(0);
         }
-    } private createAudioSources() {
+    }
+
+    private createAudioSources() {
         try {
             // Create BGM audio source
             this.bgmAudioSource = this.node.addComponent(AudioSource);

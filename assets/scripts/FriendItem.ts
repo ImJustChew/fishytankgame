@@ -1,6 +1,7 @@
 import { _decorator, Component, Node, Label, Button, Color, Sprite, AudioClip, AudioSource, director } from 'cc';
 import { FriendData, StealAttempt } from './firebase/social-service';
 import { TankBGMManager } from './TankBGMManager';
+import { AudioManager } from './AudioManager';
 
 const { ccclass, property } = _decorator;
 
@@ -65,25 +66,25 @@ export class FriendItem extends Component {
         this.onRemoveCallback = onRemoveCallback;
         this.onAcceptCallback = onAcceptCallback;
         this.isFriendPending = isPending;
-        
+
         // 設置 UI 顯示
         if (this.usernameLabel) {
             this.usernameLabel.string = friendData.username || 'Unknown';
         }
-        
+
         if (this.lastLoginLabel) {
             const lastOnline = friendData.lastOnline ? new Date(friendData.lastOnline) : null;
             this.lastLoginLabel.string = lastOnline ? this.formatLastLogin(friendData.lastOnline) : 'Unknown';
         }
-        
+
         if (this.moneyLabel) {
             this.moneyLabel.string = `$${friendData.money || 0}`;
         }
-        
+
         if (this.statusLabel) {
             this.statusLabel.string = hasStolen ? 'Stolen' : '';
         }
-        
+
         // 如果是待處理的朋友請求，將訪問按鈕更改為接受按鈕
         if (isPending && this.visitButton) {
             this.visitButton.getComponentInChildren(Label).string = 'Accept';
@@ -145,7 +146,7 @@ export class FriendItem extends Component {
      */
     private onVisitClicked() {
         if (this.musicAudioSource && this.clickButtonSound) {
-            this.musicAudioSource.playOneShot(this.clickButtonSound);
+            this.musicAudioSource.playOneShot(this.clickButtonSound, AudioManager.getSFXVolume());
         }
         if (this.isFriendPending) {
             console.log('Accepting friend request:', this.friendData.uid);
@@ -165,17 +166,17 @@ export class FriendItem extends Component {
      */
     private onVisitCallback: (friendUid: string) => void = (friendUid: string) => {
         console.log('Visiting friend tank:', friendUid);
-        
+
         // 保存要訪問的朋友 UID 到全局變量，以便在下一個場景中使用
         window['visitingFriendUid'] = friendUid;
         window['visitingFriendData'] = this.friendData;
-        
+
         // 如果有背景音樂管理器，移除它以避免場景切換後音樂重疊
         if (TankBGMManager.bgmNode) {
             console.log('Removing BGM node from director');
             director.removePersistRootNode(TankBGMManager.bgmNode);
         }
-        
+
         // 延遲一點時間再切換場景，以確保 UI 動畫完成
         setTimeout(() => {
             director.loadScene('FriendTank');
@@ -196,7 +197,7 @@ export class FriendItem extends Component {
 
     private onRemoveClicked() {
         if (this.musicAudioSource && this.clickButtonSound) {
-            this.musicAudioSource.playOneShot(this.clickButtonSound);
+            this.musicAudioSource.playOneShot(this.clickButtonSound, AudioManager.getSFXVolume());
         }
         if (this.onRemoveCallback && this.friendData) {
             this.onRemoveCallback(this.friendData.uid);
