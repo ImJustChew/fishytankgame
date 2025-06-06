@@ -4787,6 +4787,10 @@
     "disturbanceAmplitude": 15,
     "disturbanceFrequency": 2.5,
     "recoverySpeed": 0.25,
+    "disturbanceSound": {
+      "__uuid__": "6f788c7f-ec9d-48b6-81db-25cb4b55786a",
+      "__expectedType__": "cc.AudioClip"
+    },
     "_id": ""
   },
   {
