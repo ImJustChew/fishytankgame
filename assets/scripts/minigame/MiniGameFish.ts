@@ -13,17 +13,24 @@ import {
 } from 'cc';
 import { FishConfig, FishType } from './types/index.d';
 import { EventManager } from './EventManager';
-import { GameManager } from './GameManager';
 import { Bullet } from './Bullet';
 const { ccclass, property } = _decorator;
 
 Enum(FishType);
 
-@ccclass('Fish')
+@ccclass('MiniGameFish')
 export class Fish extends Component {
   // 魚隻類型
   @property({ type: FishType })
   public fishType: FishType = FishType.Fish_01;
+  
+  // 魚隻血量 (based on fish type)
+  @property
+  public maxHealth: number = 100;
+  
+  @property
+  public currentHealth: number = 100;
+  
   // 圖片 Node
   @property(Node)
   public bodyNode: Node = null;
@@ -48,7 +55,6 @@ export class Fish extends Component {
   private _spawnTime: number = 0;
   private _maxLifeTime: number = 0;
   private _color: Color = new Color(255, 255, 255, 255);
-  private _killByOther: boolean = false;
   private _stopUpdating: boolean = false;
 
   protected onLoad(): void {
@@ -74,7 +80,7 @@ export class Fish extends Component {
 
   update(deltaTime: number) {
     if (this._stopUpdating) return;
-    // 其實 now 應該要跟伺服器拿，但在這個 demo 先忽略不做
+    
     const now = Date.now();
     // 單位(秒)
     const elapsedTime = (now - this._spawnTime) / 1000;
@@ -114,8 +120,12 @@ export class Fish extends Component {
   reset() {
     // 重置魚隻狀態
     this.isHittable = true;
-    this._killByOther = false;
     this._stopUpdating = false;
+    
+    // Reset health based on fish type
+    this.resetHealthByType();
+    this.currentHealth = this.maxHealth;
+    
     // 重置倍率,x Node
     this.multiplierNode.active = false;
     this.closeNode.active = false;
@@ -126,17 +136,80 @@ export class Fish extends Component {
     this.bodyAnimation.play('FishSwim');
   }
 
+  // Set health based on fish type
+  resetHealthByType() {
+    switch (this.fishType) {
+      case FishType.Fish_01: // 小丑魚 - low health
+        this.maxHealth = 50;
+        break;
+      case FishType.Fish_02: // 熱帶魚 - medium health
+        this.maxHealth = 100;
+        break;
+      case FishType.Fish_03: // 河豚 - medium-high health
+        this.maxHealth = 150;
+        break;
+      case FishType.Fish_04: // 章魚 - high health
+        this.maxHealth = 250;
+        break;
+      case FishType.Fish_05: // 鯊魚 - very high health
+        this.maxHealth = 400;
+        break;
+      default:
+        this.maxHealth = 100;
+        break;
+    }
+  }
+
+  // Take damage from bullet
+  takeDamage(damage: number): boolean {
+    this.currentHealth -= damage;
+    console.log(`Fish ${this._fishId} took ${damage} damage. Health: ${this.currentHealth}/${this.maxHealth}`);
+    
+    if (this.currentHealth <= 0) {
+      // Fish is killed - award points and destroy immediately
+      this.currentHealth = 0;
+      this.awardPointsAndDestroy();
+      return true; // Fish died
+    }
+    return false; // Fish still alive
+  }
+
+  // Award points and destroy fish immediately
+  awardPointsAndDestroy() {
+    const points = this.calculatePoints();
+    console.log(`Fish ${this._fishId} killed! Awarding ${points} points`);
+    
+    // Emit fish killed event with points
+    EventManager.eventTarget.emit('fish-killed', {
+      fishId: this._fishId,
+      uuid: this._uuid,
+      points: points,
+      fishType: this.fishType,
+      position: this.node.position
+    });
+    
+    // Destroy fish immediately
+    this.stopAction();
+  }
+
+  // Calculate points based on fish type
+  private calculatePoints(): number {
+    switch (this.fishType) {
+      case FishType.Fish_01: return 100;  // 小丑魚
+      case FishType.Fish_02: return 200;  // 熱帶魚
+      case FishType.Fish_03: return 300;  // 河豚
+      case FishType.Fish_04: return 500;  // 章魚
+      case FishType.Fish_05: return 1000; // 鯊魚
+      default: return 100;
+    }
+  }
+
   // 終止魚隻行為
   stopAction() {
     // 停止可被攻擊狀態
     this.isHittable = false;
     // 發布事件(FishManager.ts 訂閱)
     EventManager.eventTarget.emit('stop-fish', this.node, this);
-    // 發送銷毀魚隻 'destroy-invisible-fish' 事件
-    GameManager.instance.sendMessageWithRoomId(
-      'destroy-invisible-fish',
-      this._uuid
-    );
   }
 
   // 更新魚隻狀態，並回傳{ uuid, this }，方便 FishManager.ts 使用
@@ -163,13 +236,6 @@ export class Fish extends Component {
     this.playZoomOutAnimation();
   }
 
-  // 被其他玩家消滅
-  killByOtherPlayer() {
-    this.isHittable = false;
-    this._killByOther = true;
-    this.freezeAction();
-  }
-
   playHitAnimation() {
     this.bodyAnimation.stop();
     this.bodyAnimation.play('FishHit');
@@ -183,26 +249,7 @@ export class Fish extends Component {
 
   // 動畫播放結束
   onAnimationFinished(type: Animation.EventType, state: AnimationState) {
-    if (state.name === 'FishZoomOut') {
-      // 延遲執行 stopAction
-      this.scheduleOnce(() => {
-        this.stopAction();
-      }, 0.5);
-
-      // 玩家自己中獎
-      if (!this._killByOther) {
-        // 顯示倍率 Node
-        this.multiplierNode.active = true;
-        // 觸發玩家點數更新
-        GameManager.instance.sendMessageWithRoomId('get-point', null);
-      }
-      // 別的玩家中獎
-      else {
-        // 顯示 x Node
-        this.closeNode.active = true;
-      }
-      this.bodyNode.active = false;
-    } else if (state.name === 'FishHit') {
+    if (state.name === 'FishHit') {
       // 恢復游泳動畫
       this.bodyAnimation.play('FishSwim');
     }
@@ -213,18 +260,34 @@ export class Fish extends Component {
     const bullet = otherCollider.getComponent(Bullet);
     // 如果是子彈才處理
     if (!bullet) return;
+    
     // 魚隻被擊中
     if (this.isHittable) {
       this.isHittable = false;
-      // console.log('Hit Fish: ', this._fishId);
-      // 發送擊中魚隻 'hit-fish' 事件
-      EventManager.eventTarget.emit('before-hit-fish', this._uuid);
+      console.log('Hit Fish: ', this._fishId);
+      
+      // Get bullet damage
+      const bulletDamage = bullet.damage;
+      
+      // Apply damage
+      const fishDied = this.takeDamage(bulletDamage);
+      
       // 停用「子彈」的碰撞元件（停止檢測碰撞）
       bullet.closeCollider();
       // 停用子彈行為
       this.scheduleOnce(() => {
         bullet.stopAction();
       }, 0);
+      
+      if (!fishDied) {
+        // Fish survives - reset hittable after brief delay and play hit animation
+        //AudioManager.instance.playSound(SoundClipType.Hit);
+        this.playHitAnimation();
+        this.scheduleOnce(() => {
+          this.resetHittable();
+        }, 0.5);
+      }
+      // Note: If fish died, awardPointsAndDestroy() already handled everything
     }
   }
 }
