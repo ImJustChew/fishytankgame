@@ -1,11 +1,12 @@
 import { _decorator, Component, Node, Button, director, AudioClip, AudioSource } from 'cc';
 import { FriendListPanel } from './FriendListPanel';
+import { AudioManager } from './AudioManager';
 
 const { ccclass, property } = _decorator;
 
 @ccclass('MainUIController')
 export class MainUIController extends Component {
-    
+
     @property(Button)
     friendListButton: Button = null;
 
@@ -14,7 +15,7 @@ export class MainUIController extends Component {
 
     @property(Button)
     shopButton: Button = null;
-    
+
     @property(FriendListPanel)
     friendListPanel: FriendListPanel = null;
 
@@ -57,7 +58,7 @@ export class MainUIController extends Component {
         console.log('[MainUIController] Friend List Button clicked.');
         if (!this.friendListPanel.node.active) {
             if (this.musicAudioSource && this.clickButtonSound) {
-                this.musicAudioSource.playOneShot(this.clickButtonSound);
+                this.musicAudioSource.playOneShot(this.clickButtonSound, AudioManager.getSFXVolume());
             }
             if (this.friendListPanel) {
                 this.friendListPanel.show();
@@ -69,7 +70,7 @@ export class MainUIController extends Component {
     private onExitClicked() {
         if (!this.friendListPanel.node.active) {
             if (this.musicAudioSource && this.clickButtonSound) {
-                this.musicAudioSource.playOneShot(this.clickButtonSound);
+                this.musicAudioSource.playOneShot(this.clickButtonSound, AudioManager.getSFXVolume());
             }
             director.removePersistRootNode(this.TankBGMNode);
             console.log('[MainUIController] Exit Button clicked.');
@@ -82,7 +83,7 @@ export class MainUIController extends Component {
     private onShopClicked() {
         if (!this.friendListPanel.node.active) {
             if (this.musicAudioSource && this.clickButtonSound) {
-                this.musicAudioSource.playOneShot(this.clickButtonSound);
+                this.musicAudioSource.playOneShot(this.clickButtonSound, AudioManager.getSFXVolume());
             }
             console.log('[MainUIController] Shop Button clicked.');
             setTimeout(() => {

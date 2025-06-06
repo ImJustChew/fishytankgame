@@ -86,7 +86,7 @@ export class FishTankManager extends Component {
                         const sfxNode = new Node('SFXAudioSource');
                         const sfx = sfxNode.addComponent(AudioSource);
                         sfx.clip = this.eatFishFoodSound;
-                        sfx.volume = 0.4;
+                        sfx.volume = AudioManager.getSFXVolume();
                         sfx.play();
                         this.node.addChild(sfxNode);
                         sfx.node.once(AudioSource.EventType.ENDED, () => {
@@ -136,23 +136,23 @@ export class FishTankManager extends Component {
         if (this.fishManager) {
             console.log('[FishTankManager] Initializing FishManager sprite map');
             this.fishManager.initializeSpriteMap();
-            
+
             // Debug: Check if the fishManager has sprites after initialization
             const testSprite = this.fishManager.getFishSpriteById('fish_001');
             console.log('[FishTankManager] Test sprite for fish_001:', testSprite ? 'Found' : 'Not found');
         } else {
             console.error('FishManager not assigned to FishTankManager');
         }
-        
+
         // Set up fish data listener
         this.setupFishDataListener();
-        
+
         // Initialize upgrade button
         this.initUpgradeButton();
-        
+
         // Load tank level from database
         this.loadTankLevelFromDatabase();
-        
+
         // Set up money listener
         //this.setupMoneyListener();
         //this.spawnDefaultFish();
@@ -230,13 +230,13 @@ export class FishTankManager extends Component {
 
             if (savedFish && savedFish.length > 0) {
                 console.log(`Loading ${savedFish.length} fish from database`);
-                
+
                 // Debug: Check if fish types match FISH_LIST IDs
                 const fishListIds = FISH_LIST.map(fish => fish.id);
                 for (const fish of savedFish) {
                     console.log(`[FishTankManager] Fish type: "${fish.type}", exists in FISH_LIST: ${fishListIds.indexOf(fish.type) !== -1}`);
                 }
-                
+
                 if (preserveExisting) {
                     // Use updateFishFromData to preserve existing fish positions
                     this.fishTank.updateFishFromData(savedFish, this.fishManager);
@@ -385,7 +385,7 @@ export class FishTankManager extends Component {
             const sfxNode = new Node('SFXAudioSource');
             const sfx = sfxNode.addComponent(AudioSource);
             sfx.clip = this.fishFoodGenerationSound;
-            sfx.volume = 1;
+            sfx.volume = AudioManager.getSFXVolume();
             sfx.play();
             this.node.addChild(sfxNode);
             sfx.node.once(AudioSource.EventType.ENDED, () => {
@@ -410,20 +410,20 @@ export class FishTankManager extends Component {
         if (this.upgradeTankButton) {
             // 初始時隱藏按鈕
             this.upgradeTankButton.active = false;
-            
+
             // 添加點擊事件
             const button = this.upgradeTankButton.getComponent(Button);
             if (button) {
                 button.node.on(Button.EventType.CLICK, this.onUpgradeTankClicked, this);
             }
-            
+
             // 設置按鈕文字
             if (this.upgradeTankLabel) {
                 this.upgradeTankLabel.string = `升級魚缸 ($${TANK_UPGRADE_COST})`;
             }
         }
     }
-    
+
     private async loadTankLevelFromDatabase() {
         try {
             const userData = await databaseService.getUserData();
@@ -439,7 +439,7 @@ export class FishTankManager extends Component {
             console.error('Failed to load tank level:', error);
         }
     }
-    
+
     private async saveTankLevelToDatabase() {
         try {
             // 使用新添加的 updateUserTankLevel 方法
@@ -449,7 +449,7 @@ export class FishTankManager extends Component {
             console.error('Failed to save tank level:', error);
         }
     }
-    
+
     /*private setupMoneyListener() {
         // 監聽金錢變化
         databaseService.onUserMoneyChanged((money) => {
@@ -457,7 +457,7 @@ export class FishTankManager extends Component {
             this.checkUpgradeAvailability();
         });
     }*/
-    
+
     private checkUpgradeAvailability() {
         // 如果金錢達到升級要求且魚缸等級未達最高，顯示升級按鈕
         if (this.currentMoney >= TANK_UPGRADE_COST && this.currentTankLevel < TankLevel.Deluxe) {
@@ -470,56 +470,56 @@ export class FishTankManager extends Component {
             }
         }
     }
-    
+
     private async onUpgradeTankClicked() {
         // 檢查金錢是否足夠
         if (this.currentMoney < TANK_UPGRADE_COST) {
             console.log('Not enough money to upgrade tank');
             return;
         }
-        
+
         // 檢查魚缸等級是否已達最高
         if (this.currentTankLevel >= TankLevel.Deluxe) {
             console.log('Tank already at maximum level');
             return;
         }
-        
+
         try {
             // 扣除金錢
             const newMoney = this.currentMoney - TANK_UPGRADE_COST;
             await databaseService.updateUserMoney(newMoney);
-            
+
             // 升級魚缸
             this.currentTankLevel++;
-            
+
             // 更新魚缸外觀
             this.updateTankAppearance();
-            
+
             // 保存魚缸等級到數據庫
             await this.saveTankLevelToDatabase();
-            
+
             // 隱藏升級按鈕
             this.checkUpgradeAvailability();
-            
+
             // 播放升級音效
             const audioManager = AudioManager.getInstance();
             if (audioManager) {
                 audioManager.playSFX('upgrade_success');
             }
-            
+
             console.log(`Tank upgraded to level ${this.currentTankLevel}`);
         } catch (error) {
             console.error('Failed to upgrade tank:', error);
         }
     }
-    
+
     private updateTankAppearance() {
         // 根據魚缸等級更新外觀
         if (this.tankBackgroundSprite && this.tankLevelSprites.length >= this.currentTankLevel) {
             const spriteIndex = this.currentTankLevel - 1;
             this.tankBackgroundSprite.spriteFrame = this.tankLevelSprites[spriteIndex];
         }
-        
+
         // 根據魚缸等級調整魚缸大小或其他屬性
         if (this.fishTank) {
             // 更新魚缸容量
