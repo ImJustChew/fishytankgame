@@ -127,6 +127,17 @@ export class ShopManager extends Component {
     if (this.money < price) {
       console.log(`Not enough money to buy ${typeId}`);
       this.showWarning(`Insufficient funds! Need $${price}, current balance: $${this.money}`);
+      
+      // Play error sound for insufficient funds
+      const audioManager = AudioManager.getInstance();
+      if (audioManager) {
+        try {
+          audioManager.playSFX('purchase_failed');
+        } catch (e) {
+          console.log('purchase_failed sound not found, using fallback sound');
+          audioManager.playSFX('button_click');
+        }
+      }
       return;
     }
 
@@ -178,7 +189,14 @@ export class ShopManager extends Component {
       // Play error sound
       const audioManager = AudioManager.getInstance();
       if (audioManager) {
-        audioManager.playSFX('purchase_failed');
+        // Try to play purchase_failed, fallback to a generic sound if not found
+        try {
+          audioManager.playSFX('purchase_failed');
+        } catch (e) {
+          console.log('purchase_failed sound not found, using fallback sound');
+          // Try to use another existing sound as fallback
+          audioManager.playSFX('button_click');
+        }
       }
       
       // Show error message in warning label (default red color)

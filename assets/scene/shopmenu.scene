@@ -2165,6 +2165,10 @@
       {
         "__uuid__": "b93baed4-105c-4edf-b811-c7a96034c9e3",
         "__expectedType__": "cc.AudioClip"
+      },
+      {
+        "__uuid__": "84a44735-f91a-44fd-ab4f-c416a4e23f14",
+        "__expectedType__": "cc.AudioClip"
       }
     ],
     "_id": "59rcpQEQtFe42VrcLCKMdH"
