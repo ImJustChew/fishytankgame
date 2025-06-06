@@ -33,6 +33,9 @@ export class ShopManager extends Component {
   @property
   public warningDuration = 3; // 警告显示时间（秒）
 
+  @property(Label)
+  public balanceLabel: Label = null!;
+
   private money = 0;
 
   /*onload() {
@@ -43,6 +46,7 @@ export class ShopManager extends Component {
   async start() {
     await this.fetchOrInitMoney();
     this.populateFishList();
+    this.updateBalanceDisplay();
 
     // 初始化警告标签
     if (this.warningLabel) {
@@ -61,6 +65,7 @@ export class ShopManager extends Component {
     if (!userData) {
       console.warn('ShopManager: 用户未登录或无法读取数据，使用默认金钱');
       this.money = this.defaultMoney;
+      this.updateBalanceDisplay();
       return;
     }
     if (typeof userData.money !== 'number') {
@@ -69,6 +74,7 @@ export class ShopManager extends Component {
     } else {
       this.money = userData.money;
     }
+    this.updateBalanceDisplay();
   }
 
   private populateFishList() {
@@ -128,6 +134,7 @@ export class ShopManager extends Component {
     try {
       await purchaseFish(typeId);
       this.money -= price;
+      this.updateBalanceDisplay();
       console.log(`Fish purchased: ${typeId}, remaining balance: $${this.money}`);
 
       const fishNode = event.target as Node;
@@ -173,5 +180,26 @@ export class ShopManager extends Component {
         this.warningLabel.node.active = false;
       }
     }, this.warningDuration);
+  }
+
+  private updateBalanceDisplay() {
+    if (this.balanceLabel) {
+      this.balanceLabel.string = `Balance: $${this.money}`;
+      
+      // Change color based on balance amount
+      if (this.money > 500) {
+        // Rich - green color
+        this.balanceLabel.color = new Color(50, 200, 50, 255);
+      } else if (this.money > 100) {
+        // Moderate - blue color
+        this.balanceLabel.color = new Color(50, 150, 255, 255);
+      } else if (this.money > 50) {
+        // Low - yellow color
+        this.balanceLabel.color = new Color(255, 200, 50, 255);
+      } else {
+        // Very low - red color
+        this.balanceLabel.color = new Color(255, 100, 100, 255);
+      }
+    }
   }
 }
