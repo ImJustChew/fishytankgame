@@ -20,6 +20,9 @@ export class TankDecorationController extends Component {
     @property(Node)
     decoration1: Node = null;
 
+    @property(Node)
+    decoration1_oarfish: Node = null;
+
     private currentDecorationIndex: number = 0;
 
     private timer: number = 0;
@@ -66,6 +69,7 @@ export class TankDecorationController extends Component {
                     this.toggleDecoration(0);
                     socialService.setCurrentUserTankType(0);
                 } else {
+                    if(!this.decorationToggleButton) return;
                     this.decorationToggleButton.enabled = true;
                     const sprite = this.decorationToggleButton.node.getComponent(Sprite);
                     if (sprite) {
@@ -79,16 +83,38 @@ export class TankDecorationController extends Component {
 
     toggleDecoration(cur_idx: number) {
         if (cur_idx === 0) {
-            this.background0.active = true;
-            this.decoration0.active = true;
-            this.decoration1.active = false;
-            this.background1.active = false;
+            if(this.background0){
+                this.background0.active = true;
+            }
+            if(this.decoration0){
+                this.decoration0.active = true;
+            }
+            if(this.decoration1){
+                this.decoration1.active = false;
+            }
+            if(this.decoration1_oarfish){
+                this.decoration1_oarfish.active = false;
+            }
+            if(this.background1){
+                this.background1.active = false;
+            }
         }
         else if (cur_idx === 1) {
-            this.background1.active = true;
-            this.decoration1.active = true;
-            this.decoration0.active = false;
-            this.background0.active = false;
+            if(this.background1){
+                this.background1.active = true;
+            }
+            if(this.decoration1_oarfish){
+                this.decoration1_oarfish.active = true;
+            }
+            if(this.decoration1){
+                this.decoration1.active = true;
+            }
+            if(this.decoration0){
+                this.decoration0.active = false;
+            }
+            if(this.background0){
+                this.background0.active = false;
+            }
         }
         this.currentDecorationIndex = cur_idx;
     }

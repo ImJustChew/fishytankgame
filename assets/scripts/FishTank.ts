@@ -17,7 +17,7 @@ const { ccclass, property } = _decorator;
 export class FishTank extends Component {
 
     @property
-    maxFishCount: number = 10;
+    maxFishCount: number = 30;
 
     @property
     maxFishFoodCount: number = 20;
