@@ -128,7 +128,7 @@ class DatabaseService {
 
         try {
             await database.ref(`users/${user.uid}/fishes/${fishId}`).update(updates);
-            console.log(`Updated fish ${fishId} for user ${user.uid}:`, updates);
+            //console.log(`Updated fish ${fishId} for user ${user.uid}:`, updates);
         } catch (error) {
             console.error('Error updating fish:', error);
         }
