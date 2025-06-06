@@ -114,7 +114,7 @@ export class FishTankManager extends Component {
             // If auto-load is disabled, still load once initially
             this.loadFishFromDatabase();
         }
-        this.spawnDefaultFish();
+        //this.spawnDefaultFish();
 
         // Initialize player system
         this.initializePlayerSystem();
@@ -166,7 +166,7 @@ export class FishTankManager extends Component {
             // Clear all fish when no data is received
             this.fishTank.clearAllFish();
             // Optionally spawn default fish for testing
-            this.spawnDefaultFish();
+            //this.spawnDefaultFish();
         }
     }
 
@@ -196,12 +196,12 @@ export class FishTankManager extends Component {
             } else {
                 console.log('No saved fish found in database');
                 // Optionally spawn some default fish for testing
-                this.spawnDefaultFish();
+                //this.spawnDefaultFish();
             }
         } catch (error) {
             console.error('Error loading fish from database:', error);
             // Fallback to default fish
-            this.spawnDefaultFish();
+            //this.spawnDefaultFish();
         }
     }
 

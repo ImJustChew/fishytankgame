@@ -129,7 +129,7 @@ export class FishTank extends Component {
 
             if (existingFish) {
                 // Update existing fish data without losing position
-                console.log(`Updating existing fish ${newFishData.id} data`);
+                //console.log(`Updating existing fish ${newFishData.id} data`);
                 existingFish.updateFishData(newFishData);
             } else {
                 // Add new fish if we haven't reached the limit

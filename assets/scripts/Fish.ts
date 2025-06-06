@@ -18,7 +18,7 @@ export class Fish extends Component {
     hungerDecayRate: number = 1; // Health points lost per min when not fed
 
     @property
-    hungerDecayInterval: number = 300; // Time in seconds before health starts decaying (1 hour)
+    hungerDecayInterval: number = 0; // Time in seconds before health starts decaying (1 hour) (300)
 
     flipSpriteHorizontally: boolean = false;
 
@@ -233,17 +233,18 @@ export class Fish extends Component {
         if (timeSinceLastFed > this.hungerDecayInterval) {
             // Calculate how much health to decay based on time passed
             const timeOverHungerLimit = timeSinceLastFed - this.hungerDecayInterval;
-            const minutesOverLimit = timeOverHungerLimit / 60; // Convert to hours
+            const minutesOverLimit = timeOverHungerLimit / 1; // Convert to minutes (/60)
 
             // Decay health gradually - only lose health every hour, not every frame
             const healthDecayAmount = Math.floor(minutesOverLimit * this.hungerDecayRate);
-            const expectedHealth = this.getMaxHealth() - healthDecayAmount;
+            const expectedHealth = Math.max(0.0, this.getMaxHealth() - healthDecayAmount);
 
             // Only update if the expected health is different from current health
             // This prevents constant database updates
             if (this.fishData.health > expectedHealth) {
                 const healthLoss = this.fishData.health - expectedHealth;
-                //console.log(`Fish ${this.fishData.id} losing ${healthLoss} health due to hunger (${Math.floor(timeSinceLastFed / 60)} mins since last fed)`);
+                //console.log(expectedHealth);
+                console.log(`Fish ${this.fishData.id} losing ${healthLoss} health due to hunger (${Math.floor(timeSinceLastFed / 60)} mins since last fed)`);
                 this.updateHealth(-healthLoss); // Use negative value to decrease health
             }
         }
@@ -342,7 +343,7 @@ export class Fish extends Component {
             this.fishData.type = newFishData.type;
             this.fishData.ownerId = newFishData.ownerId;
 
-            console.log(`Updated fish data for fish ${this.fishData.id} without losing state`);
+            //console.log(`Updated fish data for fish ${this.fishData.id} without losing state`);
         }
     }
 
