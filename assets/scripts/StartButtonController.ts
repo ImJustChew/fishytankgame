@@ -2,6 +2,7 @@ import { _decorator, Component, Button, Color, director, AudioClip, AudioSource,
 import authService from './firebase/auth-service';
 import databaseService, { UserData } from './firebase/database-service';
 import firebase from './firebase/firebase-compat.js';
+import { AudioManager } from './AudioManager';
 
 const { ccclass, property } = _decorator;
 
@@ -106,7 +107,7 @@ export class StartButtonController extends Component {
             const sfxNode = new Node('SFXAudioSource');
             const sfx = sfxNode.addComponent(AudioSource);
             sfx.clip = this.clickButtonSound;
-            sfx.volume = 0.6;
+            sfx.volume = AudioManager.getSFXVolume();
             sfx.play();
             this.node.addChild(sfxNode);
             sfx.node.once(AudioSource.EventType.ENDED, () => {
@@ -121,7 +122,7 @@ export class StartButtonController extends Component {
 
         console.log('[StartButtonController] Starting game...');
         setTimeout(() => {
-                director.loadScene('aquarium');
+            director.loadScene('aquarium');
         }, 150);
     }
 
@@ -143,8 +144,8 @@ export class StartButtonController extends Component {
      */
     public setButtonEnabled(enabled: boolean) {
         this.setButtonState(enabled);
-    } 
-    
+    }
+
     onDestroy() {
         // Clean up event listeners
         if (this.startButton && this.startButton.node) {

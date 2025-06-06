@@ -2,6 +2,7 @@ import { _decorator, Component, Node, Prefab, instantiate, ScrollView, Button, d
 import socialService, { FriendData, StealAttempt } from './firebase/social-service';
 import { FriendItem } from './FriendItem';
 import { UITransform } from 'cc';
+import { AudioManager } from './AudioManager';
 
 const { ccclass, property } = _decorator;
 
@@ -63,10 +64,16 @@ export class FriendListPanel extends Component {
             this.removeFriendButton.node.on(Button.EventType.CLICK, this.toggleRemoveMode, this);
         }
         if (this.addFriendButton) {
+            console.log("Registering add friend button click event");
             this.addFriendButton.node.on(Button.EventType.CLICK, this.toggleAddFriendPanel, this);
+        } else {
+            console.error("Add friend button is not assigned!");
         }
         if (this.sendRequestButton) {
+            console.log("Registering send request button click event");
             this.sendRequestButton.node.on(Button.EventType.CLICK, this.onSendRequest, this);
+        } else {
+            console.error("Send request button is not assigned!");
         }
     }
 
@@ -190,7 +197,7 @@ export class FriendListPanel extends Component {
 
     private onCloseClicked() {
         if (this.musicAudioSource && this.clickButtonSound) {
-                this.musicAudioSource.playOneShot(this.clickButtonSound);
+            this.musicAudioSource.playOneShot(this.clickButtonSound, AudioManager.getSFXVolume());
         }
         if (this.removeMode) {
             this.toggleRemoveMode();
@@ -204,7 +211,7 @@ export class FriendListPanel extends Component {
         if (this.notificationLabel) {
             this.notificationLabel.node.active = false;
         }
-        if(this.displayEditBoxLabel) {
+        if (this.displayEditBoxLabel) {
             this.displayEditBoxLabel.string = "";
         }
         this.node.active = false;
@@ -242,7 +249,7 @@ export class FriendListPanel extends Component {
 
     private toggleRemoveMode() {
         if (this.musicAudioSource && this.clickButtonSound) {
-            this.musicAudioSource.playOneShot(this.clickButtonSound);
+            this.musicAudioSource.playOneShot(this.clickButtonSound, AudioManager.getSFXVolume());
         }
         this.removeMode = !this.removeMode;
         this.friendItems.forEach(item => {
@@ -314,13 +321,26 @@ export class FriendListPanel extends Component {
 
     private toggleAddFriendPanel() {
         if (this.musicAudioSource && this.clickButtonSound) {
-            this.musicAudioSource.playOneShot(this.clickButtonSound);
+            this.musicAudioSource.playOneShot(this.clickButtonSound, AudioManager.getSFXVolume());
         }
         this.isAddFriendPanelVisible = !this.isAddFriendPanelVisible;
+
+        if (!this.addFriendPanel) {
+            console.error("Add friend panel is not assigned!");
+            return;
+        }
+
         this.addFriendPanel.active = this.isAddFriendPanelVisible;
+        console.log("Set addFriendPanel.active to:", this.isAddFriendPanelVisible);
+
         if (this.isAddFriendPanelVisible) {
             // Reset the add friend panel or perform any necessary setup
             console.log('Add Friend Panel is now visible');
+
+            // Make sure the edit box is focused
+            if (this.addFriendEditBox) {
+                this.addFriendEditBox.focus();
+            }
         } else {
             console.log('Add Friend Panel is now hidden');
             if (this.addFriendEditBox) {
@@ -330,7 +350,7 @@ export class FriendListPanel extends Component {
                 this.notificationLabel.node.active = false;
             }
         }
-        if(this.displayEditBoxLabel) {
+        if (this.displayEditBoxLabel) {
             this.displayEditBoxLabel.string = "";
         }
     }
@@ -339,15 +359,43 @@ export class FriendListPanel extends Component {
     private async onSendRequest() {
         if (!this.addFriendEditBox) return;
         if (this.musicAudioSource && this.clickButtonSound) {
-            this.musicAudioSource.playOneShot(this.clickButtonSound);
+            this.musicAudioSource.playOneShot(this.clickButtonSound, AudioManager.getSFXVolume());
         }
-        const identifier = this.addFriendEditBox.string.trim();
+        let identifier = this.addFriendEditBox.string.trim();
         if (!identifier) {
             this.showNotification('Please enter something', false);
             return;
         }
-        const result = await socialService.sendFriendRequest(identifier);
-        this.showNotification(result.message, result.success);
+
+        identifier = this.addFriendEditBox.string.trim();
+        console.log("Friend identifier entered:", identifier);
+
+        if (!identifier) {
+            console.log("Empty identifier, showing notification");
+            this.showNotification('Please enter a username or email', false);
+            return;
+        }
+
+        console.log("Sending friend request to:", identifier);
+        try {
+            const result = await socialService.sendFriendRequest(identifier);
+            console.log("Friend request result:", result);
+            this.showNotification(result.message, result.success);
+
+            if (result.success) {
+                // Clear the input field on success
+                this.addFriendEditBox.string = '';
+
+                // Optionally close the add friend panel after successful request
+                // this.toggleAddFriendPanel();
+
+                // Refresh the friends list to show pending requests
+                this.loadFriendsList();
+            }
+        } catch (error) {
+            console.error("Error sending friend request:", error);
+            this.showNotification('Failed to send friend request: ' + error.message, false);
+        }
     }
 
     private showNotification(message: string, success: boolean = true) {

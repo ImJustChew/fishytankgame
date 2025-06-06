@@ -17,7 +17,7 @@ const { ccclass, property } = _decorator;
 export class FishTank extends Component {
 
     @property
-    maxFishCount: number = 30;
+    maxFishCount: number = 99999;
 
     @property
     maxFishFoodCount: number = 20;
@@ -67,16 +67,54 @@ export class FishTank extends Component {
     }
 
     public spawnFishFromData(fishDataArray: SavedFishType[], fishManager: FishManager) {
-        // Recalculate tank bounds to ensure they're up to date
-        this.calculateTankBounds();
+        if (!fishDataArray) {
+            console.log('No fish data provided');
+            return;
+        }
 
-        // Clear existing fish
+        console.log(`Spawning ${fishDataArray.length} fish from data`);
+        
+        // Debug: Check if fishManager is valid
+        if (!fishManager) {
+            console.error('[FishTank] No FishManager provided to spawnFishFromData');
+            return;
+        }
+        
+        console.log('[FishTank] Using FishManager:', fishManager);
+
+        // Clear existing fish first
         this.clearAllFish();
 
-        // Limit the number of fish to spawn
-        const fishToSpawn = fishDataArray.slice(0, this.maxFishCount);
-
-        fishToSpawn.forEach((fishData, index) => {
+        // Process each fish from the data
+        fishDataArray.slice(0, this.maxFishCount).forEach(fishData => {
+            // Skip fish with undefined type
+            if (!fishData.type) {
+                console.warn('[FishTank] Skipping fish with undefined type');
+                return;
+            }
+            
+            // Debug: Log each fish's type
+            console.log(`[FishTank] Processing fish with type: "${fishData.type}"`);
+            
+            // 檢查魚是否已死亡
+            if (fishData.health <= 0) {
+                console.log(`Skipping dead fish ${fishData.id}`);
+                
+                // 從數據庫中移除已死亡的魚
+                if (fishData.id) {
+                    databaseService.removeFish(fishData.id)
+                        .then(() => {
+                            console.log(`Dead fish ${fishData.id} removed from database`);
+                        })
+                        .catch(error => {
+                            console.error(`Error removing dead fish ${fishData.id}:`, error);
+                        });
+                }
+                
+                return;
+            }
+            
+            // 生成活著的魚 - Make sure to pass fishManager
             this.spawnFish(fishData, fishManager);
         });
     }
@@ -86,22 +124,28 @@ export class FishTank extends Component {
      * Only adds new fish, removes missing fish, and updates existing fish data
      */
     public updateFishFromData(fishDataArray: SavedFishType[], fishManager: FishManager) {
-        // Recalculate tank bounds to ensure they're up to date
-        this.calculateTankBounds();
+        if (!fishDataArray) {
+            console.log('No fish data provided for update');
+            return;
+        }
 
-        // Get current fish IDs for comparison
-        const currentFishIds = new Set(
-            this.activeFish
-                .map(fish => fish.getFishData()?.id)
-                .filter(id => id !== undefined) as string[]
-        );
+        console.log(`Updating ${fishDataArray.length} fish from data`);
+        
+        // Debug: Check if fishManager is valid
+        if (!fishManager) {
+            console.error('[FishTank] No FishManager provided to updateFishFromData');
+            return;
+        }
+        
+        console.log('[FishTank] Using FishManager:', fishManager);
 
-        // Get new fish IDs for comparison
-        const newFishIds = new Set(
-            fishDataArray
-                .map(fish => fish.id)
-                .filter(id => id !== undefined) as string[]
-        );
+        // Create a set of IDs from the new data for quick lookup
+        const newFishIds = new Set<string>();
+        fishDataArray.forEach(fish => {
+            if (fish.id) {
+                newFishIds.add(fish.id);
+            }
+        });
 
         // Remove fish that are no longer in the new data
         const fishToRemove = this.activeFish.filter(fish => {
@@ -116,6 +160,35 @@ export class FishTank extends Component {
 
         // Process each fish from the new data
         fishDataArray.slice(0, this.maxFishCount).forEach(newFishData => {
+            // 檢查魚是否已死亡
+            if (newFishData.health <= 0) {
+                console.log(`Skipping dead fish ${newFishData.id}`);
+                
+                // 從數據庫中移除已死亡的魚
+                if (newFishData.id) {
+                    databaseService.removeFish(newFishData.id)
+                        .then(() => {
+                            console.log(`Dead fish ${newFishData.id} removed from database`);
+                        })
+                        .catch(error => {
+                            console.error(`Error removing dead fish ${newFishData.id}:`, error);
+                        });
+                }
+                
+                // 如果這條死魚已經在場景中，移除它
+                const existingFish = this.activeFish.find(fish => {
+                    const fishData = fish.getFishData();
+                    return fishData?.id === newFishData.id;
+                });
+                
+                if (existingFish) {
+                    console.log(`Removing dead fish ${newFishData.id} from scene`);
+                    this.removeFish(existingFish);
+                }
+                
+                return;
+            }
+
             if (!newFishData.id) {
                 console.warn('Fish data missing ID, cannot sync');
                 return;
@@ -131,18 +204,13 @@ export class FishTank extends Component {
                 // Update existing fish data without losing position
                 //console.log(`Updating existing fish ${newFishData.id} data`);
                 existingFish.updateFishData(newFishData);
+                console.log(`Updated existing fish ${newFishData.id}`);
             } else {
-                // Add new fish if we haven't reached the limit
-                if (this.activeFish.length < this.maxFishCount) {
-                    console.log(`Adding new fish ${newFishData.id}`);
-                    this.spawnFish(newFishData, fishManager);
-                } else {
-                    console.warn('Cannot add more fish - max fish count reached');
-                }
+                // Spawn new fish - make sure to pass fishManager
+                this.spawnFish(newFishData, fishManager);
+                console.log(`Spawned new fish ${newFishData.id}`);
             }
         });
-
-        console.log(`Fish sync complete: ${this.activeFish.length} fish active`);
     }
 
     public spawnFish(fishData: SavedFishType, fishManager: FishManager): Fish | null {
@@ -152,10 +220,28 @@ export class FishTank extends Component {
             return null;
         }
 
-        // Get sprite frame for the fish type
-        const spriteFrame = fishManager.getFishSpriteById(fishData.type);
+        // Get sprite frame for the fish type if fishManager is provided
+        let spriteFrame = null;
+        if (fishManager) {
+            // Debug: Log the fish manager instance
+            console.log('[FishTank] FishManager provided:', fishManager);
+            
+            // Debug: Log the fish type being requested
+            console.log(`[FishTank] Requesting sprite for fish type: "${fishData.type}"`);
+            
+            // Check if the fishManager has the getFishSpriteById method
+            if (typeof fishManager.getFishSpriteById === 'function') {
+                spriteFrame = fishManager.getFishSpriteById(fishData.type);
+                console.log(`[FishTank] Sprite frame result:`, spriteFrame ? 'Found' : 'Not found');
+            } else {
+                console.error('[FishTank] FishManager does not have getFishSpriteById method');
+            }
+        } else {
+            console.warn('[FishTank] No FishManager provided for fish type:', fishData.type);
+        }
+        
         if (!spriteFrame) {
-            console.warn(`No sprite found for fish type: ${fishData.type}, spawning without sprite`);
+            console.warn(`[FishTank] No sprite found for fish type: ${fishData.type}, spawning without sprite`);
         }
 
         // Create a new node for the fish
@@ -174,6 +260,18 @@ export class FishTank extends Component {
         const spriteComponent = fishNode.addComponent(Sprite);
         if (spriteComponent && spriteFrame) {
             spriteComponent.spriteFrame = spriteFrame;
+        }
+
+        // Add UITransform component for collision detection
+        const uiTransform = fishNode.addComponent(UITransform);
+        if (uiTransform) {
+            // Set size based on sprite or default size
+            if (spriteFrame) {
+                const originalSize = spriteFrame.originalSize;
+                uiTransform.setContentSize(originalSize.width, originalSize.height);
+            } else {
+                uiTransform.setContentSize(50, 50); // Default size if no sprite
+            }
         }
 
         // Initialize the fish with data and bounds
@@ -520,6 +618,46 @@ export class FishTank extends Component {
      */
     public getPlayerCount(): number {
         return this.activePlayers.length;
+    }
+
+    /**
+     * 檢查並清理已死亡的魚
+     * 這個方法應該定期調用，確保數據庫和遊戲狀態保持同步
+     */
+    public cleanupDeadFish() {
+        if (!this.activeFish || this.activeFish.length === 0) return;
+        
+        console.log(`Checking ${this.activeFish.length} fish for dead ones...`);
+        
+        const deadFish = this.activeFish.filter(fish => {
+            const fishData = fish.getFishData();
+            return fishData && fishData.health <= 0;
+        });
+        
+        if (deadFish.length > 0) {
+            console.log(`Found ${deadFish.length} dead fish to clean up`);
+            
+            deadFish.forEach(fish => {
+                const fishData = fish.getFishData();
+                if (fishData && fishData.id) {
+                    console.log(`Removing dead fish ${fishData.id} from database`);
+                    
+                    // 從數據庫中移除魚
+                    databaseService.removeFish(fishData.id)
+                        .then(() => {
+                            console.log(`Fish ${fishData.id} successfully removed from database`);
+                        })
+                        .catch(error => {
+                            console.error(`Error removing fish ${fishData.id} from database:`, error);
+                        });
+                    
+                    // 從遊戲中移除魚
+                    this.removeFish(fish);
+                }
+            });
+        } else {
+            console.log('No dead fish found');
+        }
     }
 
     onDestroy() {
