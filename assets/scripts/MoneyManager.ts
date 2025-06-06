@@ -25,7 +25,7 @@ export class MoneyManager extends Component {
     private animationDuration: number = 0.3;
 
     @property
-    private updateInterval: number = 1.0; // Time in seconds between money updates    // State variables
+    private updateInterval: number = 10.0; // Time in seconds between money updates    // State variables
     private userFishes: SavedFishType[] = [];
     private userData: UserData | null = null;
     private totalIncomeRate: number = 0;
@@ -210,7 +210,7 @@ export class MoneyManager extends Component {
         if (!this.userData || this.totalIncomeRate <= 0) return;
 
         // Calculate earned money for this update cycle
-        const earnedMoney = this.totalIncomeRate * this.updateInterval;
+        const earnedMoney = this.totalIncomeRate;
 
         if (earnedMoney > 0) {
             // Update local user data
@@ -266,7 +266,7 @@ export class MoneyManager extends Component {
      */
     updateIncomeRateDisplay() {
         if (this.incomeRateLabel) {
-            this.incomeRateLabel.string = `+${this.totalIncomeRate.toFixed(1)}/sec`;
+            this.incomeRateLabel.string = `+${this.totalIncomeRate.toFixed(1)}/10sec`;
         }
     }    /**
      * Animates the money label when money increases
