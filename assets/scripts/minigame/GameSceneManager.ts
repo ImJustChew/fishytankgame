@@ -230,7 +230,7 @@ export class GameSceneManager extends Component {
     this.unschedule(this.updateTimer);
   }
 
-  // ✅ SEPARATE POINTS AND SCORE HANDLING (restored to original)
+  // ✅ POINTS HANDLING
   addPoints(points: number) {
     if (!this.isGameActive) return;
     
@@ -238,6 +238,7 @@ export class GameSceneManager extends Component {
     this.updatePoint(newTotal, true);
   }
 
+  /*
   addScore(points: number) {
     if (!this.isGameActive) return;
     
@@ -251,7 +252,6 @@ export class GameSceneManager extends Component {
       this._scoreTween.stop();
     }
     
-    /*
     if (animated && this.scoreLabel) {
       this._tempScore.score = this.score;
       this._scoreTween = tween(this._tempScore)
@@ -271,13 +271,14 @@ export class GameSceneManager extends Component {
         this.scoreLabel.string = `Score: ${newScore}`;
       }
     }
-    */
   }
+  */
 
   checkAffordability() {
     EventManager.eventTarget.emit('switch-can-fire', this.isGameActive);
   }
 
+  /*
   onClickClose() {
     if (this.popupModal) {
       this.popupModal.active = false;
@@ -286,6 +287,7 @@ export class GameSceneManager extends Component {
       this.modalText.string = '';
     }
   }
+  */
 
   onClickConfirm() {
     if (this.popupModal) {
@@ -294,22 +296,43 @@ export class GameSceneManager extends Component {
     if (this.modalText) {
       this.modalText.string = '';
     }
-    
-    if (!this.isGameActive) {
-      this.onClickQuitRoom();
-    }
+
+    console.log('Confirm clicked, quitting to aquarium');
+    this.onClickQuitToAquarium();
   }
 
+  onClickQuitToAquarium() {
+    this.isGameActive = false;
+    this.unschedule(this.updateTimer);
+    this.unschedule(this.spawnFishes);
+    EventManager.eventTarget.emit('stop-all-fish');
+    
+    // Disable shooting
+    EventManager.eventTarget.emit('switch-can-fire', false);
+
+    this.scheduleOnce(() => {
+      this.playerPointLabel.string = '';
+      this.popupModal.active = false;
+      this.point = 0;
+      director.loadScene('aquarium', (err, scene) => {
+        if(!err) {
+          console.log('Returned to aquarium scene');
+          EventManager.eventTarget.emit('init-aquarium-scene');
+        }
+        else {
+          console.error('Failed to load aquarium scene:', err);
+        }
+      });
+    }, 0.1);
+  }
+
+  /*
   onClickQuitRoom() {
     this.scheduleOnce(() => {
       if (this.playerPointLabel) {
         this.playerPointLabel.string = '';
       }
-      /*
-      if (this.scoreLabel) {
-        this.scoreLabel.string = 'Score: 0';
-      }
-      */
+
       if (this.popupModal) {
         this.popupModal.active = false;
       }
@@ -322,6 +345,7 @@ export class GameSceneManager extends Component {
       });
     }, 0.5);
   }
+  */
 
   updatePoint(currentPoint: number, delay: boolean) {
     if (this._tempTween && this._tempTween.running) {
