@@ -80,9 +80,10 @@ export class FriendItem extends Component {
             this.moneyLabel.string = `$${friendData.money || 0}`;
         }
         
-        if (this.statusLabel) {
+        /*if (this.statusLabel) {
             this.statusLabel.string = hasStolen ? 'Stolen' : '';
-        }
+        }*/
+       this.setupFriendStatus(hasStolen);
         
         // 如果是待處理的朋友請求，將訪問按鈕更改為接受按鈕
         if (isPending && this.visitButton) {
