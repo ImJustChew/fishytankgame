@@ -2,12 +2,12 @@
   "ver": "1.1.50",
   "importer": "prefab",
   "imported": true,
-  "uuid": "6da69115-b4a7-4edf-a4e1-25a543b79ac3",
+  "uuid": "0194c1e4-4fe1-422a-a4ed-38e049fe83f2",
   "files": [
     ".json"
   ],
   "subMetas": {},
   "userData": {
-    "syncNodeName": "Decoration_For_Tank_2"
+    "syncNodeName": "Oarfish_MaskRoot_For_Tank_1"
   }
 }

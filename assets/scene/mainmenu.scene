@@ -3164,7 +3164,9 @@
     "userContainer": {
       "__id__": 50
     },
-    "usernameDialog": null,
+    "usernameDialog": {
+      "__id__": 39
+    },
     "_id": "03pfAVteJDlrFmfquYXGnK"
   },
   {
