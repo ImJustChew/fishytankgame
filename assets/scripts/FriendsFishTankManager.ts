@@ -446,50 +446,47 @@ export class FriendsFishTankManager extends Component {
      * @param friendUid 朋友的用戶 ID
      */
     private async loadFriendFish(friendUid: string) {
+        if (!this.fishManager) {
+            console.error('FishManager not assigned to FriendsFishTankManager');
+            return;
+        }
+        
+        // 确保FishManager的spriteMap已初始化
+        this.fishManager.initializeSpriteMap();
+        
+        // 只输出map相关的调试信息
+        console.log('FishManager spriteMap initialized');
+        
         try {
-            console.log(`Loading fish for friend: ${friendUid}`);
+            // 获取朋友的鱼数据
+            const fishData = await this.getFriendFishData(friendUid);
             
-            // 檢查必要組件
-            if (!this.fishTank) {
-                console.error('FishTank component not assigned');
-                return;
-            }
-            
-            if (!this.fishManager) {
-                console.error('FishManager component not assigned');
-                return;
-            }
-            
-            // 從數據庫獲取朋友的魚
-            const fishSnapshot = await database.ref(`users/${friendUid}/fishes`).once('value');
-            const fishData = fishSnapshot.val();
-            
-            if (!fishData) {
-                console.log('No fish found for this friend');
-                return;
-            }
-            
-            // 將數據轉換為數組格式
+            // 将数据转换为数组格式
             const fishArray: SavedFishType[] = [];
             Object.keys(fishData).forEach(key => {
                 const fish = fishData[key];
+                const fishType = fish.type;
+                const hasSprite = this.fishManager?.getFishSpriteById(fishType) ? true : false;
+                
+                // 只输出map查找结果
+                console.log(`Map lookup: Fish type "${fishType}" -> Sprite found: ${hasSprite}`);
+                
                 fishArray.push({
                     id: key,
                     ownerId: friendUid,
-                    type: fish.type,
+                    type: fishType,
                     health: fish.health || 100,
                     lastFedTime: fish.lastFedTime || Date.now()
                 });
             });
             
-            console.log(`Found ${fishArray.length} fish for friend ${friendUid}`);
-            
-            // 保存當前魚數據
+            // 保存当前鱼数据
             this.currentFishData = fishArray;
             
-            // 在魚缸中顯示魚
-            this.fishTank.spawnFishFromData(fishArray, this.fishManager);
-            console.log('Fish spawned in tank');
+            // 在鱼缸中显示鱼
+            if (this.fishTank) {
+                this.fishTank.spawnFishFromData(fishArray, this.fishManager);
+            }
         } catch (error) {
             console.error('Error loading friend\'s fish:', error);
         }
