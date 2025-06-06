@@ -284,7 +284,13 @@ export class MoneyManager extends Component {
      */
     updateMoneyDisplay() {
         if (this.moneyLabel && this.userData) {
-            this.moneyLabel.string = `${Math.floor(this.userData.money)}`;
+            // Math.floor(this.userData.money) 大於七位數時用科學記號表示
+            if (this.userData.money >= 1e7) {
+                this.moneyLabel.string = `$${(this.userData.money / 1e6).toFixed(2)}M`;
+            } else {
+                this.moneyLabel.string = `$${Math.floor(this.userData.money)}`;
+            }
+            //this.moneyLabel.string = `$${Math.floor(this.userData.money)}`;
         }
     }
 
