@@ -4,6 +4,7 @@ import { IBattleFish, BattleFishFactory } from '../data/BattleFishData';
 import { BattleConfig } from '../data/BattleConfig';
 import { Fish as FishData } from '../../FishData';
 import { SavedFishType } from '../../firebase/database-service';
+import { AudioManager } from '../../AudioManager';
 
 const { ccclass, property } = _decorator;
 
@@ -312,7 +313,7 @@ export class BattleFish extends Fish {
      */
     private playAttackSound(): void {
         if (this.audioSource && this.attackSound) {
-            this.audioSource.playOneShot(this.attackSound);
+            this.audioSource.playOneShot(this.attackSound, AudioManager.getSFXVolume());
         }
     }
 
@@ -350,7 +351,7 @@ export class BattleFish extends Fish {
      */
     private playDeathSound(): void {
         if (this.audioSource && this.deathSound) {
-            this.audioSource.playOneShot(this.deathSound);
+            this.audioSource.playOneShot(this.deathSound, AudioManager.getSFXVolume());
         }
     }/**
      * Set battle target

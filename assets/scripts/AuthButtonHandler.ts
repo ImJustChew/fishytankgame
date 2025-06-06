@@ -5,6 +5,7 @@ import { UsernameDialog } from './UsernameDialog';
 import { INITIAL_MONEY } from './constants';
 import firebase from './firebase/firebase-compat.js';
 import { StartButtonController } from './StartButtonController';
+import { AudioManager } from './AudioManager';
 
 const { ccclass, property } = _decorator;
 
@@ -125,7 +126,7 @@ export class AuthButtonHandler extends Component {
 
             console.log('[AuthButtonHandler] User profile created successfully');
             this.showUserUI(username);
-            
+
             // Refresh any StartButtonController instances in the scene
             this.refreshStartButtonControllers();
         } catch (error) {
@@ -141,9 +142,9 @@ export class AuthButtonHandler extends Component {
     private refreshStartButtonControllers() {
         // Look for StartButtonController in the scene
         const startButtonControllers = director.getScene().getComponentsInChildren(StartButtonController);
-        
+
         console.log(`[AuthButtonHandler] Found ${startButtonControllers.length} StartButtonController instances`);
-        
+
         // Refresh each controller's button state
         startButtonControllers.forEach(controller => {
             console.log('[AuthButtonHandler] Refreshing StartButtonController');
@@ -180,7 +181,7 @@ export class AuthButtonHandler extends Component {
             const sfxNode = new Node('SFXAudioSource');
             const sfx = sfxNode.addComponent(AudioSource);
             sfx.clip = this.clickButtonSound;
-            sfx.volume = 0.6;
+            sfx.volume = AudioManager.getSFXVolume();
             sfx.play();
             this.node.addChild(sfxNode);
             sfx.node.once(AudioSource.EventType.ENDED, () => {
@@ -206,7 +207,7 @@ export class AuthButtonHandler extends Component {
             const sfxNode = new Node('SFXAudioSource');
             const sfx = sfxNode.addComponent(AudioSource);
             sfx.clip = this.clickButtonSound;
-            sfx.volume = 0.6;
+            sfx.volume = AudioManager.getSFXVolume();
             sfx.play();
             this.node.addChild(sfxNode);
             sfx.node.once(AudioSource.EventType.ENDED, () => {

@@ -25,7 +25,7 @@ export class MoneyManager extends Component {
     private animationDuration: number = 0.3;
 
     @property
-    private updateInterval: number = 10.0; // Time in seconds between money updates    // State variables
+    private updateInterval: number = 1.0; // Time in seconds between money updates    // State variables
     private userFishes: SavedFishType[] = [];
     private userData: UserData | null = null;
     private totalIncomeRate: number = 0;
