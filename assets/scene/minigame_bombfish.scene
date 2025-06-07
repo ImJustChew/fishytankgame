@@ -437,7 +437,7 @@
     "_priority": 0,
     "_fov": 45,
     "_fovAxis": 0,
-    "_orthoHeight": 360,
+    "_orthoHeight": 493.5793357933579,
     "_near": 0,
     "_far": 2000,
     "_color": {
@@ -6206,6 +6206,7 @@
       "__id__": 147
     },
     "modalText": null,
+    "gameOverPanel": null,
     "_id": "80sqyzG5NK4Z/Mxmx5GCsz"
   },
   {

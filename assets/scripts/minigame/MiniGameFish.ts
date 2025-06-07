@@ -162,8 +162,10 @@ export class Fish extends Component {
 
   // Take damage from bullet
   takeDamage(damage: number): boolean {
-    this.currentHealth -= damage;
-    console.log(`Fish ${this._fishId} took ${damage} damage. Health: ${this.currentHealth}/${this.maxHealth}`);
+    // 确保伤害至少为1
+    const actualDamage = Math.max(1, damage);
+    this.currentHealth -= actualDamage;
+    console.log(`Fish ${this._fishId} took ${actualDamage} damage. Health: ${this.currentHealth}/${this.maxHealth}`);
     
     if (this.currentHealth <= 0) {
       // Fish is killed - award points and destroy immediately
@@ -180,6 +182,7 @@ export class Fish extends Component {
     console.log(`Fish ${this._fishId} killed! Awarding ${points} points`);
     
     // Emit fish killed event with points
+    console.log('Emitting fish-killed event with points:', points);
     EventManager.eventTarget.emit('fish-killed', {
       fishId: this._fishId,
       uuid: this._uuid,
@@ -194,14 +197,19 @@ export class Fish extends Component {
 
   // Calculate points based on fish type
   private calculatePoints(): number {
+    let points = 100; // 默认值
+    
     switch (this.fishType) {
-      case FishType.Fish_01: return 100;  // 小丑魚
-      case FishType.Fish_02: return 200;  // 熱帶魚
-      case FishType.Fish_03: return 300;  // 河豚
-      case FishType.Fish_04: return 500;  // 章魚
-      case FishType.Fish_05: return 1000; // 鯊魚
-      default: return 100;
+      case FishType.Fish_01: points = 100; break;  // 小丑魚
+      case FishType.Fish_02: points = 200; break;  // 熱帶魚
+      case FishType.Fish_03: points = 300; break;  // 河豚
+      case FishType.Fish_04: points = 500; break;  // 章魚
+      case FishType.Fish_05: points = 1000; break; // 鯊魚
+      default: points = 100; break;
     }
+    
+    console.log(`Fish type ${this.fishType} awards ${points} points`);
+    return points;
   }
 
   // 終止魚隻行為
@@ -220,6 +228,33 @@ export class Fish extends Component {
     this._spawnX = fish.spawnX;
     this._spawnTime = fish.spawnTime;
     this._maxLifeTime = fish.maxLifeTime;
+    
+    // 根据鱼的类型设置初始生命值
+    switch (this.fishType) {
+      case FishType.Fish_01: 
+        this.maxHealth = 50;
+        break;
+      case FishType.Fish_02: 
+        this.maxHealth = 100;
+        break;
+      case FishType.Fish_03: 
+        this.maxHealth = 150;
+        break;
+      case FishType.Fish_04: 
+        this.maxHealth = 200;
+        break;
+      case FishType.Fish_05: 
+        this.maxHealth = 300;
+        break;
+      default: 
+        this.maxHealth = 100;
+        break;
+    }
+    
+    // 重置当前生命值为最大生命值
+    this.currentHealth = this.maxHealth;
+    console.log(`Fish ${this._fishId} initialized with health: ${this.currentHealth}/${this.maxHealth}`);
+    
     return { uuid: this._uuid, fishInstance: this };
   }
 
@@ -257,37 +292,39 @@ export class Fish extends Component {
 
   // 碰撞開始
   onBeginContact(selfCollider: Collider2D, otherCollider: Collider2D) {
+    // 確保魚是可以被擊中的狀態
+    if (!this.isHittable) {
+      console.log('Fish not hittable at this time');
+      return;
+    }
+    
     const bullet = otherCollider.getComponent(Bullet);
     // 如果是子彈才處理
-    if (!bullet) return;
+    if (!bullet) {
+      console.log('Collision with non-bullet object');
+      return;
+    }
     
     // 魚隻被擊中
-    if (this.isHittable) {
-      this.isHittable = false;
-      console.log('Hit Fish: ', this._fishId);
-      
-      // Get bullet damage
-      const bulletDamage = bullet.damage;
-      
-      // Apply damage
-      const fishDied = this.takeDamage(bulletDamage);
-      
-      // 停用「子彈」的碰撞元件（停止檢測碰撞）
-      bullet.closeCollider();
-      // 停用子彈行為
-      this.scheduleOnce(() => {
-        bullet.stopAction();
-      }, 0);
-      
-      if (!fishDied) {
-        // Fish survives - reset hittable after brief delay and play hit animation
-        //AudioManager.instance.playSound(SoundClipType.Hit);
-        this.playHitAnimation();
-        this.scheduleOnce(() => {
-          this.resetHittable();
-        }, 0.5);
-      }
-      // Note: If fish died, awardPointsAndDestroy() already handled everything
-    }
+    this.isHittable = false;
+    console.log('Hit Fish: ', this._fishId, 'with bullet damage:', bullet.damage);
+    
+    // Get bullet damage
+    const bulletDamage = bullet.damage;
+    
+    // Apply damage
+    console.log('Before damage - Fish health:', this.currentHealth, '/', this.maxHealth);
+    const fishDied = this.takeDamage(bulletDamage);
+    console.log('After damage - Fish health:', this.currentHealth, '/', this.maxHealth, 'Fish died:', fishDied);
+    
+    // 停用「子彈」的碰撞元件（停止檢測碰撞）
+    bullet.closeCollider();
+    // 停用子彈行為
+    bullet.stopAction();
+    
+    // 重置可擊中狀態（延遲一段時間後）
+    this.scheduleOnce(() => {
+      this.isHittable = true;
+    }, 0.5);
   }
 }

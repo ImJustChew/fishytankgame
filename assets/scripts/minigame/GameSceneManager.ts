@@ -28,6 +28,8 @@ export class GameSceneManager extends Component {
   public popupModal: Node = null;
   @property(Label)
   public modalText: Label = null;
+  @property(Node)
+  public gameOverPanel: Node = null;
 
   public bulletLevel: number = 3;
   public point: number = 0;
@@ -59,10 +61,11 @@ export class GameSceneManager extends Component {
     EventManager.eventTarget.on('init-game-scene', this.initGameScene, this);
     EventManager.eventTarget.on('update-point', this.updatePoint, this);
     EventManager.eventTarget.on('show-fire-fail', this.showFireFail, this);
+    
+    // 确保正确监听add-points事件
     EventManager.eventTarget.on('add-points', this.addPoints, this);
-    //EventManager.eventTarget.on('add-score', this.addScore, this);
-
-    this.initGameScene();
+    
+    console.log('GameSceneManager: Events registered');
   }
 
   initGameScene(): void {
@@ -148,20 +151,42 @@ export class GameSceneManager extends Component {
 
   // ✅ HANDLE TIME UP
   timeUp() {
-    console.log('Time is up!');
+    if (!this.isGameActive) return;
+    
     this.isGameActive = false;
-    
-    // Stop all timers
     this.unschedule(this.updateTimer);
-    this.unschedule(this.spawnFishes);
     
-    EventManager.eventTarget.emit('stop-all-fish');
-    
-    // Disable shooting
+    // 停止發射子彈
     EventManager.eventTarget.emit('switch-can-fire', false);
     
-    // Show time up popup
-    this.showTimeUpPopup();
+    // 顯示遊戲結束面板
+    if (this.gameOverPanel) {
+        this.gameOverPanel.active = true;
+        
+        // 更新分數顯示
+        const scoreLabel = this.gameOverPanel.getChildByName('ScoreLabel');
+        if (scoreLabel) {
+            const label = scoreLabel.getComponent(Label);
+            if (label) {
+                label.string = `Score: ${this.point}`;
+            }
+        }
+    }
+    
+    // 檢查是否達到偷魚的分數要求
+    const minScoreToSteal = 500; // 設置偷魚的最低分數要求
+    const success = this.point >= minScoreToSteal;
+    
+    // 延遲幾秒後返回朋友魚缸場景
+    this.scheduleOnce(() => {
+        // 如果是從朋友魚缸場景進入的，則返回並執行回調
+        if (window['onMiniGameComplete'] && typeof window['onMiniGameComplete'] === 'function') {
+            window['onMiniGameComplete'](this.point, success);
+        }
+        
+        // 返回朋友魚缸場景
+        director.loadScene('FriendTank');
+    }, 3); // 3秒後返回
   }
 
   showTimeUpPopup() {
@@ -235,8 +260,10 @@ export class GameSceneManager extends Component {
   addPoints(points: number) {
     if (!this.isGameActive) return;
     
+    console.log(`GameSceneManager: Adding ${points} points to current total ${this.point}`);
     const newTotal = this.point + points;
     this.updatePoint(newTotal, true);
+    console.log(`GameSceneManager: New total is ${this.point}`);
   }
 
   /*

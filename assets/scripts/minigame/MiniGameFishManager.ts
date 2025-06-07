@@ -54,6 +54,8 @@ export class FishManager extends Component {
     EventManager.eventTarget.on('stop-fish', this.stopFish, this); // Fish.ts 發布
     EventManager.eventTarget.on('spawn-fishes', this.spawnFishes, this);
     EventManager.eventTarget.on('fish-killed', this.onFishKilled, this); // Handle fish kills
+    
+    console.log('FishManager: Events registered');
   }
 
   protected start(): void {
@@ -90,19 +92,20 @@ export class FishManager extends Component {
     fishType: FishType,
     position: Vec3
   }) {
-    console.log(`Fish ${data.fishId} killed! Points: ${data.points}`);
+    console.log(`FishManager: Fish ${data.fishId} killed! Points: ${data.points}`);
     
     // Play win sound
     AudioManager.instance.playSound(SoundClipType.Win);
     
     // Spawn coin animation
+    console.log('Emitting spawn-coins event');
     EventManager.eventTarget.emit('spawn-coins', {
       fishType: data.fishType,
       startPosition: data.position
     });
     
-    // ✅ EMIT BOTH EVENTS SEPARATELY (restored to original)
-    //EventManager.eventTarget.emit('add-score', data.points);
+    // Emit add-points event
+    console.log('Emitting add-points event with points:', data.points);
     EventManager.eventTarget.emit('add-points', data.points);
   }
 
