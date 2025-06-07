@@ -25,6 +25,9 @@ export class MainUIController extends Component {
     @property(Node)
     TankBGMNode: Node = null;
 
+    @property(Button)
+    miniGameButton: Button = null;
+
     private musicAudioSource: AudioSource | null = null;
 
     onLoad() {
@@ -39,6 +42,10 @@ export class MainUIController extends Component {
         if (this.shopButton) {
             console.log('[MainUIController] Shop Button found, setting up click listener.');
             this.shopButton.node.on(Button.EventType.CLICK, this.onShopClicked, this);
+        }
+        if (this.miniGameButton) {
+            console.log('[MainUIController] Mini Game Button found, setting up click listener.');
+            this.miniGameButton.node.on(Button.EventType.CLICK, this.onMiniGameClicked, this);
         }
 
         if (this.friendListPanel) {
@@ -88,6 +95,18 @@ export class MainUIController extends Component {
             console.log('[MainUIController] Shop Button clicked.');
             setTimeout(() => {
                 director.loadScene('shopmenu');
+            }, 150);
+        }
+    }
+
+    private onMiniGameClicked() {
+        if (!this.friendListPanel.node.active) {
+            if (this.musicAudioSource && this.clickButtonSound) {
+                this.musicAudioSource.playOneShot(this.clickButtonSound, AudioManager.getSFXVolume());
+            }
+            console.log('[MainUIController] Shop Button clicked.');
+            setTimeout(() => {
+                director.loadScene('minigame_bombfish');
             }, 150);
         }
     }
