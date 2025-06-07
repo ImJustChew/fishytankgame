@@ -493,10 +493,10 @@ export class Fish extends Component {
      * Get the maximum health for this fish type from FISH_LIST
      */
     public getMaxHealth(): number {
-        if (!this.fishData) return 100; // Default fallback
+        if (!this.fishData) return 50; // Default fallback
 
         const fishDefinition = FISH_LIST.find(fish => fish.id === this.fishData!.type);
-        return fishDefinition ? fishDefinition.health : 100; // Default fallback if fish type not found
+        return fishDefinition ? fishDefinition.health : 50; // Default fallback if fish type not found
     }
 
     public setFishType(type: string) {
