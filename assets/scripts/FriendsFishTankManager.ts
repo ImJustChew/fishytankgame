@@ -1,9 +1,11 @@
-import { _decorator, Component, Node, Sprite, SpriteFrame,find } from 'cc';
+import { _decorator, Component, Node, Sprite, SpriteFrame, find, input, Input,EventTouch, UITransform, Vec3, AudioClip, AudioSource } from 'cc';
 import { FishTank } from './FishTank';
 import { FishManager } from './FishManager';
 import socialService, { FriendData } from './firebase/social-service';
+import { FishFoodManager } from './FishFoodManager';
 import { SavedFishType } from './firebase/database-service';
 import { database } from './firebase/firebase';
+import { AudioManager } from './AudioManager';
 
 const { ccclass, property } = _decorator;
 
@@ -35,8 +37,23 @@ export class FriendsFishTankManager extends Component {
     @property(FishManager)
     fishManager: FishManager | null = null;
 
+    @property(FishFoodManager)
+    fishFoodManager: FishFoodManager | null = null;
+
     @property
     autoUpdateFish: boolean = true;
+
+    @property(AudioClip)
+    eatFishFoodSound: AudioClip | null = null;
+
+    @property
+    trackingRange: number = 400;
+
+    @property
+    eatDistance: number = 20;
+
+    @property(AudioClip)
+    fishFoodGenerationSound: AudioClip | null = null;
 
     private currentFriendUid: string | null = null;
     private friendData: FriendData | null = null;
@@ -75,6 +92,94 @@ export class FriendsFishTankManager extends Component {
             } else {
                 console.log('FishManager component found');
             }
+        }
+        input.on(Input.EventType.TOUCH_END, this.onClickEnd, this);
+    }
+
+    private isFoodNearFish(foodNode: Node, fishNode: Node): boolean {
+        const foodPos = foodNode.getWorldPosition();
+        const fishPos = fishNode.getWorldPosition();
+        const distance = Vec3.distance(foodPos, fishPos);
+        return distance < this.eatDistance; // Adjust threshold as needed
+    }
+
+    update(deltaTime: number) {
+        // check for collision of fish and food (eating) 
+        for (const food of this.fishTank.getActiveFishFood()) {
+            for (const fish of this.fishTank.getActiveFish()) {
+                if (this.isFoodNearFish(food.node, fish.node)) {
+                    fish.eatFood(food.getFoodType());
+                    food.destroyFood();
+                    if (this.eatFishFoodSound) {
+                        const sfxNode = new Node('SFXAudioSource');
+                        const sfx = sfxNode.addComponent(AudioSource);
+                        sfx.clip = this.eatFishFoodSound;
+                        sfx.volume = AudioManager.getSFXVolume();
+                        sfx.play();
+                        this.node.addChild(sfxNode);
+                        sfx.node.once(AudioSource.EventType.ENDED, () => {
+                            sfxNode.destroy();
+                        });
+                    }
+                    break; // One fish eats one food
+                }
+            }
+        }
+
+        for (const fish of this.fishTank.getActiveFish()) {
+            let closestFood: Node | null = null;
+            let minDistance = Infinity;
+
+            const fishPos = fish.node.getPosition();
+
+            for (const food of this.fishTank.getActiveFishFood()) {
+                if (!food || !food.node || !food.node.isValid) continue;
+                const foodPos = food.node.getPosition();
+                const distance = Vec3.distance(fishPos, foodPos);
+
+                if (distance < this.trackingRange && distance < minDistance) {
+                    minDistance = distance;
+                    closestFood = food.node;
+                }
+            }
+
+            if (closestFood) {
+                fish.setTarget(closestFood.getPosition());
+            } else {
+                fish.clearTarget();
+            }
+        }
+
+    }
+
+    private onClickEnd(event: EventTouch) {
+        // 若有 UI 遮罩或面板開啟可加判斷
+        // if (this.somePanel && this.somePanel.node.active) return;
+
+        // 取得目前選擇的魚飼料類型
+        const currentFoodType = this.fishTank.getCurrentActiveFishFood();
+        const touchPos = event.getUILocation();
+        if (!touchPos) {
+            console.warn('Could not convert to world space.');
+            return;
+        }
+
+        // 轉換為魚缸座標
+        const spawnLocation = this.fishTank.getComponent(UITransform)!.convertToNodeSpaceAR(
+            new Vec3(touchPos.x, touchPos.y, 0));
+        this.fishTank.spawnFishFood(currentFoodType, spawnLocation, this.fishFoodManager);
+
+        // 播放音效（如有）
+        if (this.fishFoodGenerationSound) {
+            const sfxNode = new Node('SFXAudioSource');
+            const sfx = sfxNode.addComponent(AudioSource);
+            sfx.clip = this.fishFoodGenerationSound;
+            sfx.volume = AudioManager.getSFXVolume();
+            sfx.play();
+            this.node.addChild(sfxNode);
+            sfx.node.once(AudioSource.EventType.ENDED, () => {
+                sfxNode.destroy();
+            });
         }
     }
 

@@ -1,6 +1,8 @@
 import { _decorator, Component, Node, Button, director, AudioClip, AudioSource } from 'cc';
 import { FriendListPanel } from './FriendListPanel';
 import { AudioManager } from './AudioManager';
+import databaseService from './firebase/database-service';
+import socialService from './firebase/social-service';
 
 const { ccclass, property } = _decorator;
 
@@ -99,7 +101,8 @@ export class MainUIController extends Component {
         }
     }
 
-    private onMiniGameClicked() {
+    private async onMiniGameClicked() {
+        await this.setUserNameToWindow();
         if (!this.friendListPanel.node.active) {
             if (this.musicAudioSource && this.clickButtonSound) {
                 this.musicAudioSource.playOneShot(this.clickButtonSound, AudioManager.getSFXVolume());
@@ -107,8 +110,15 @@ export class MainUIController extends Component {
             console.log('[MainUIController] Shop Button clicked.');
             setTimeout(() => {
                 director.loadScene('minigame_bombfish');
-            }, 150);
+            }, 500);
         }
+    }
+
+    private async setUserNameToWindow() {
+        const userData2 = await databaseService.getUserData();
+        console.log('[MainUIController] User data retrieved:', userData2.username);
+        window['userName'] = userData2 && userData2.username ? userData2.username : '';
+        console.log('[MainUIController] User name set to window:', window['userName']);
     }
 
     onDestroy() {
