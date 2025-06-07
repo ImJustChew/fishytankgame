@@ -542,7 +542,7 @@
     },
     "_enabled": true,
     "__prefab": null,
-    "maxFishCount": 10,
+    "maxFishCount": 9999999,
     "maxFishFoodCount": 20,
     "maxPlayerCount": 5,
     "_id": "1cTRCa7VNBz5P/rxUN+ySs"
