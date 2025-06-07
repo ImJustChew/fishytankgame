@@ -384,6 +384,9 @@ export class FriendListPanel extends Component {
 
             if (result.success) {
                 // Clear the input field on success
+                if (this.displayEditBoxLabel) {
+                    this.displayEditBoxLabel.string = "";
+                }
                 this.addFriendEditBox.string = '';
 
                 // Optionally close the add friend panel after successful request

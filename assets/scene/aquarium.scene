@@ -6915,7 +6915,7 @@
     },
     "_enabled": true,
     "__prefab": null,
-    "maxFishCount": 40,
+    "maxFishCount": 9999999,
     "maxFishFoodCount": 20,
     "maxPlayerCount": 5,
     "_id": "88q+X3wjFG65Ly6YiLaIwq"
@@ -7329,12 +7329,11 @@
       "__uuid__": "ea262fb1-4499-4ba0-a1e0-208bab2a548b",
       "__expectedType__": "cc.Prefab"
     },
-    "fileId": "",
+    "fileId": "d8ukFMLvFCI4XRFmjXegXT",
     "instance": {
       "__id__": 201
     },
-    "targetOverrides": null,
-    "nestedPrefabInstanceRoots": null
+    "targetOverrides": null
   },
   {
     "__type__": "cc.PrefabInstance",
@@ -7811,7 +7810,7 @@
     "__prefab": null,
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 31.776917244367418,
+      "width": 31.777740478515625,
       "height": 50.4
     },
     "_anchorPoint": {
@@ -7844,7 +7843,7 @@
     "_string": "label",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 14.650390625,
+    "_actualFontSize": 13,
     "_fontSize": 13,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
@@ -7946,7 +7945,7 @@
     "__prefab": null,
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 79.96777512998267,
+      "width": 79.99996948242188,
       "height": 50.4
     },
     "_anchorPoint": {
@@ -7979,7 +7978,7 @@
     "_string": "$12231",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 22.5390625,
+    "_actualFontSize": 20,
     "_fontSize": 20,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
