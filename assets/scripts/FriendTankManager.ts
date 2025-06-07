@@ -80,7 +80,7 @@ export class FriendTankManager extends Component {
         }
         
         // 檢查魚缸 Sprite 是否存在
-        const tankSprite = this.friendsFishTankManager.getComponent(Sprite);
+        const tankSprite = this.friendsFishTankManager.node.getComponent(Sprite);
         if (!tankSprite) {
             console.error('魚缸 Sprite 組件未找到');
         } else {
