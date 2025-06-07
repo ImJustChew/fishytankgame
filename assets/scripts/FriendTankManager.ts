@@ -45,7 +45,13 @@ export class FriendTankManager extends Component {
         
         // 設置偷魚按鈕點擊事件
         if (this.stealButton) {
+            console.log('Setting up steal button click event');
+            // 移除可能存在的舊監聽器
+            this.stealButton.node.off(Button.EventType.CLICK, this.onStealButtonClicked, this);
+            // 添加新監聽器
             this.stealButton.node.on(Button.EventType.CLICK, this.onStealButtonClicked, this);
+        } else {
+            console.error('Steal button is not assigned in the inspector!');
         }
         
         // 從全局變量獲取訪問的朋友 UID
@@ -65,6 +71,9 @@ export class FriendTankManager extends Component {
         
         // 加載朋友的魚缸
         this.loadFriendTank();
+        
+        // 列出所有可用的場景
+        this.listAvailableScenes();
     }
     
     /**
@@ -171,44 +180,75 @@ export class FriendTankManager extends Component {
     }
     
     /**
-     * 偷魚按鈕點擊處理
+     * 偷魚按鈕點擊處理 - 添加詳細調試信息
      */
-    private async onStealButtonClicked() {
-        if (!this.friendsFishTankManager) {
-            return;
+    private onStealButtonClicked() {
+        console.log('===== STEAL BUTTON CLICKED - START DEBUGGING =====');
+        
+        // 保存全局變量
+        window['stealingFromFriendUid'] = this.friendUid || 'debug_friend_id';
+        window['stealingFromFriendData'] = this.friendData || { username: 'Debug Friend' };
+        window['fishDataToSteal'] = [{ id: 'debug_fish_1', type: 1 }];
+        window['onMiniGameComplete'] = this.onMiniGameComplete.bind(this);
+        
+        // 嘗試標準方法
+        try {
+            console.log('Trying standard scene loading...');
+            director.loadScene('minigame_bombfish', (err, scene) => {
+                if (err) {
+                    console.error('Standard loading failed:', err);
+                    // 如果標準方法失敗，嘗試替代方法
+                    this.tryAlternativeSceneLoad();
+                } else {
+                    console.log('Standard loading succeeded');
+                }
+            });
+        } catch (error) {
+            console.error('Error in standard loading:', error);
+            this.tryAlternativeSceneLoad();
         }
         
-        // 檢查是否可以與朋友的魚互動
-        const canInteract = await this.friendsFishTankManager.canInteractWithFish();
-        if (!canInteract) {
-            console.log('Cannot steal fish: Not friends with this user');
+        console.log('===== STEAL BUTTON CLICKED - END DEBUGGING =====');
+    }
+
+    /**
+     * 小遊戲完成後的回調
+     * @param score 遊戲得分
+     * @param success 是否成功
+     */
+    private async onMiniGameComplete(score: number, success: boolean) {
+        // 恢復訪問的朋友信息
+        const friendUid = window['stealingFromFriendUid'];
+        const fishData = window['fishDataToSteal'];
+        
+        if (success && fishData && fishData.length > 0) {
+            // 成功完成遊戲，可以偷魚
+            // 隨機選擇一條魚
+            const randomIndex = Math.floor(Math.random() * fishData.length);
+            const targetFish = fishData[randomIndex];
+            
+            // 嘗試偷魚
+            const result = await this.friendsFishTankManager.stealFish(targetFish.id);
+            
+            console.log('Steal result:', result);
+            // 根據結果顯示提示消息
+            
+            // 刷新朋友的魚缸
+            await this.friendsFishTankManager.refreshFriendsFishTank();
+            
+            // 更新魚的數量顯示
+            this.updateFishCount();
+        } else {
+            // 遊戲失敗，顯示提示消息
+            console.log('Failed to steal fish: Game score too low');
             // 可以顯示提示消息
-            return;
         }
         
-        // 獲取朋友的魚數據
-        const fishData = this.friendsFishTankManager.getCurrentFishData();
-        if (!fishData || fishData.length === 0) {
-            console.log('No fish to steal');
-            // 可以顯示提示消息
-            return;
-        }
-        
-        // 隨機選擇一條魚
-        const randomIndex = Math.floor(Math.random() * fishData.length);
-        const targetFish = fishData[randomIndex];
-        
-        // 嘗試偷魚
-        const result = await this.friendsFishTankManager.stealFish(targetFish.id);
-        
-        console.log('Steal result:', result);
-        // 根據結果顯示提示消息
-        
-        // 刷新朋友的魚缸
-        await this.friendsFishTankManager.refreshFriendsFishTank();
-        
-        // 更新魚的數量顯示
-        this.updateFishCount();
+        // 清理全局變量
+        window['stealingFromFriendUid'] = null;
+        window['stealingFromFriendData'] = null;
+        window['fishDataToSteal'] = null;
+        window['onMiniGameComplete'] = null;
     }
     
     /**
@@ -231,6 +271,85 @@ export class FriendTankManager extends Component {
         
         if (this.stealButton && this.stealButton.node && this.stealButton.node.isValid) {
             this.stealButton.node.off(Button.EventType.CLICK, this.onStealButtonClicked, this);
+        }
+    }
+
+    /**
+     * 列出所有可用的場景
+     */
+    private listAvailableScenes() {
+        console.log('===== LISTING AVAILABLE SCENES =====');
+        try {
+            // 嘗試獲取構建設置中的場景列表
+            const sceneList = director['_sceneInfos'];
+            if (sceneList && sceneList.length > 0) {
+                console.log('Available scenes:');
+                sceneList.forEach((sceneInfo, index) => {
+                    console.log(`${index}: ${sceneInfo.url}`);
+                });
+            } else {
+                console.log('No scenes found in director._sceneInfos');
+            }
+        } catch (error) {
+            console.error('Error listing scenes:', error);
+        }
+        console.log('===== END LISTING AVAILABLE SCENES =====');
+    }
+
+    /**
+     * 嘗試使用不同方法加載場景
+     */
+    private tryAlternativeSceneLoad() {
+        console.log('Trying alternative scene loading method...');
+        
+        try {
+            // 方法 1: 使用 preloadScene 然後 runScene
+            director.preloadScene('minigame_bombfish', (err) => {
+                if (err) {
+                    console.error('Failed to preload scene:', err);
+                    this.tryMethod2();
+                } else {
+                    console.log('Scene preloaded, running scene...');
+                    director.loadScene('minigame_bombfish');
+                }
+            });
+        } catch (error) {
+            console.error('Error in alternative loading method 1:', error);
+            this.tryMethod2();
+        }
+    }
+
+    private tryMethod2() {
+        console.log('Trying method 2...');
+        try {
+            // 方法 2: 使用 runSceneImmediate
+            if (director['runSceneImmediate']) {
+                director.preloadScene('minigame_bombfish', (err, scene) => {
+                    if (!err && scene) {
+                        director['runSceneImmediate'](scene);
+                    } else {
+                        console.log('Failed to preload scene for runSceneImmediate');
+                        this.tryMethod3();
+                    }
+                });
+            } else {
+                console.log('runSceneImmediate not available, trying method 3');
+                this.tryMethod3();
+            }
+        } catch (error) {
+            console.error('Error in method 2:', error);
+            this.tryMethod3();
+        }
+    }
+
+    private tryMethod3() {
+        console.log('Trying method 3...');
+        try {
+            // 方法 3: 嘗試使用 aquarium 場景（已知可以加載的場景）
+            console.log('Trying to load a known working scene (aquarium)...');
+            director.loadScene('aquarium');
+        } catch (error) {
+            console.error('Error in method 3:', error);
         }
     }
 }
