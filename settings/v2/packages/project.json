@@ -6,21 +6,12 @@
       "value": 1
     }
   ],
-  "physics": {
-    "collisionGroups": [
-      {
-        "index": 1,
-        "name": "BULLET"
-      },
-      {
-        "index": 2,
-        "name": "FISH"
-      }
-    ],
-    "collisionMatrix": {
-      "0": 7,
-      "1": 5,
-      "2": 3
-    }
+  "general": {
+    "designResolution": {
+      "fitHeight": false,
+      "fitWidth": true,
+      "width": 1500
+    },
+    "highQuality": true
   }
 }

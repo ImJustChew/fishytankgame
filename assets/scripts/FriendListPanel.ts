@@ -1,4 +1,4 @@
-import { _decorator, Component, Node, Prefab, instantiate, ScrollView, Button, director, Label, EditBox, Color, AudioClip, AudioSource } from 'cc';
+import { _decorator, Component, Node, Prefab, instantiate, ScrollView, Button, director, Label, EditBox, Color, AudioClip, AudioSource, Widget } from 'cc';
 import socialService, { FriendData, StealAttempt } from './firebase/social-service';
 import { FriendItem } from './FriendItem';
 import { UITransform } from 'cc';
@@ -75,6 +75,7 @@ export class FriendListPanel extends Component {
         } else {
             console.error("Send request button is not assigned!");
         }
+        this.setupWidgetComponents();
     }
 
     start() {
@@ -87,6 +88,8 @@ export class FriendListPanel extends Component {
         if (!this.musicAudioSource) {
             this.musicAudioSource = this.node.getComponent(AudioSource);
         }
+        this.adjustUIForWebApp();
+        this.setupWidgetComponents();
     }
 
 
@@ -419,5 +422,81 @@ export class FriendListPanel extends Component {
             this.sendRequestButton.node.off(Button.EventType.CLICK, this.onSendRequest, this);
         }
         this.clearFriendItems();
+    }
+
+    private setupWidgetComponents() {
+        // 為主面板添加Widget組件
+        let panelWidget = this.node.getComponent(Widget);
+        if (!panelWidget) {
+            panelWidget = this.node.addComponent(Widget);
+        }
+        
+        // 設置面板相對於Canvas的位置
+        panelWidget.isAlignTop = true;
+        panelWidget.isAlignBottom = true;
+        panelWidget.isAlignLeft = true;
+        panelWidget.isAlignRight = true;
+        panelWidget.top = 50;
+        panelWidget.bottom = 50;
+        panelWidget.left = 50;
+        panelWidget.right = 50;
+        
+        // 為ScrollView添加Widget組件
+        if (this.scrollView && this.scrollView.node) {
+            let scrollWidget = this.scrollView.node.getComponent(Widget);
+            if (!scrollWidget) {
+                scrollWidget = this.scrollView.node.addComponent(Widget);
+            }
+            
+            scrollWidget.isAlignTop = true;
+            scrollWidget.isAlignBottom = true;
+            scrollWidget.isAlignLeft = true;
+            scrollWidget.isAlignRight = true;
+            scrollWidget.top = 100; // 留出頂部空間給標題
+            scrollWidget.bottom = 20;
+            scrollWidget.left = 20;
+            scrollWidget.right = 20;
+        }
+        
+        // 為按鈕添加Widget組件
+        this.setupButtonWidget(this.closeButton, true, false, true, false, 20, 0, 20, 0);
+        this.setupButtonWidget(this.removeFriendButton, true, false, false, true, 20, 0, 0, 20);
+        this.setupButtonWidget(this.addFriendButton, false, true, false, true, 0, 20, 0, 20);
+        
+        // 如果有添加好友面板，也為其添加Widget
+        if (this.addFriendPanel) {
+            let panelWidget = this.addFriendPanel.getComponent(Widget);
+            if (!panelWidget) {
+                panelWidget = this.addFriendPanel.addComponent(Widget);
+            }
+            
+            panelWidget.isAlignTop = false;
+            panelWidget.isAlignBottom = false;
+            panelWidget.isAlignLeft = false;
+            panelWidget.isAlignRight = false;
+            panelWidget.isAlignHorizontalCenter = true;
+            panelWidget.isAlignVerticalCenter = true;
+        }
+    }
+
+    // 輔助方法來設置按鈕的Widget組件
+    private setupButtonWidget(button: Button, top: boolean, bottom: boolean, left: boolean, right: boolean, 
+                             topVal: number, bottomVal: number, leftVal: number, rightVal: number) {
+        if (!button || !button.node) return;
+        
+        let widget = button.node.getComponent(Widget);
+        if (!widget) {
+            widget = button.node.addComponent(Widget);
+        }
+        
+        widget.isAlignTop = top;
+        widget.isAlignBottom = bottom;
+        widget.isAlignLeft = left;
+        widget.isAlignRight = right;
+        
+        if (top) widget.top = topVal;
+        if (bottom) widget.bottom = bottomVal;
+        if (left) widget.left = leftVal;
+        if (right) widget.right = rightVal;
     }
 }
