@@ -11,6 +11,7 @@ import {
 import { EventManager } from './EventManager';
 import { FishConfig, FishType } from './types/index.d';
 import { CoinManager } from './CoinManager';
+import databaseService from '../firebase/database-service';
 const { ccclass, property } = _decorator;
 
 @ccclass('GameSceneManager')
@@ -328,7 +329,11 @@ export class GameSceneManager extends Component {
     this.onClickQuitToAquarium();
   }
 
-  onClickQuitToAquarium() {
+  async onClickQuitToAquarium() {
+    // Coin = Coin += Coin
+    const currentMoney = await (await databaseService.getUserData()).money
+    databaseService.updateUserMoney(currentMoney +this.point);
+    
     this.isGameActive = false;
     this.unschedule(this.updateTimer);
     this.unschedule(this.spawnFishes);
